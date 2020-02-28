@@ -1,0 +1,10 @@
+{
+	"The Guardian-International": {
+		"rss": "https://www.theguardian.com/international/rss",
+		"main_class": "content__article-body from-content-api js-article__body"
+	},
+	"The Verge": {
+		"rss": "https://www.theverge.com/rss/index.xml",
+		"main_class": "c-entry-content"
+	}
+}
