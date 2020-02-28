@@ -16,9 +16,15 @@ def scrape_page(link, article_class):
     soup = BeautifulSoup(page.content, 'html.parser')
     article_content= soup.body.find(class_=article_class)
     article = []
-    for paragraph in article_content.find_all('p'):
-        sentence = paragraph.get_text()
-        if sentence != "":
-            article.append(paragraph.get_text())
+    try:
+
+        for paragraph in article_content.find_all('p'):
+            sentence = paragraph.get_text()
+            if sentence != "":
+                article.append(paragraph.get_text())
+    except AttributeError:
+        print("Can't find article text")
+    except:
+        print("Strange behaviour")
     return article
     
