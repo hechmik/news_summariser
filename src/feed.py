@@ -1,7 +1,6 @@
 import feedparser
-import json
 
-def get_website_article_link_title(feed_name):
+def get_website_article_link_title(feed_name, website):
     """
     Given a RSS Feed link return the current article with their titles and links
     Parameters
@@ -11,25 +10,27 @@ def get_website_article_link_title(feed_name):
     """
     feed = feedparser.parse(feed_name)
     articles_to_download = {}
-    for i in range(1, len(feed.entries)):
-        key = feed.entries[i].title
-        value = feed.entries[i].link
-        articles_to_download[key] = value
+    for i in range(0, len(feed.entries)):
+        title = feed.entries[i].title
+        url = feed.entries[i].link
+        articles_to_download[title] = {}
+        articles_to_download[title]['url'] = url
+        articles_to_download[title]['source'] = website
     return articles_to_download
 
-def get_feeds_articles(fn="config/rss_feed.json"):
+def get_feeds_articles(config):
     """
     Return the link and title of articles in the given RSS feeds
     Parameters
     ----------
-    fn : str
-        Filename where RSS Feeds are stored in a JSON array format. Default: "config/rss_feed.json"
+    config : dict
+        Dictionaries where websites infos such as feed URL are stored
     """
-    with open(fn, "r") as f:
-        feeds = json.load(f)
     articles_infos = []
-    for site in feeds:
-        articles_infos.append(get_website_article_link_title(site))
+    for website in config.keys():
+        print(website)
+        website_rss =config[website]['rss']
+        print(website_rss)
+        articles_infos.append(get_website_article_link_title(website_rss, website))
     return articles_infos
     
-
