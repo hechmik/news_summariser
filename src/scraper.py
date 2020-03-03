@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
+
 def scrape_page(link, article_class):
     """
     Return the entire article in the given link
@@ -24,7 +25,7 @@ def scrape_page(link, article_class):
                 article.append(paragraph.get_text())
     except AttributeError:
         print("Can't find article text")
-    except:
-        print("Strange behaviour")
+    except Exception as e:
+        print(e)
     return article
     
