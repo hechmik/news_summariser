@@ -23,13 +23,17 @@ def load_word_embedding_model(fn):
     return model
 
 
+def download_dependencies():
+    nltk.download('punkt')
+    nltk.download('stopwords')
+
+
 def tokenize_sentence(s):
     """
     Given a sentence it returns its tokenised version
     :param s: String containing sentence(s)
     :return:
     """
-    nltk.download('punkt')
     tokenized_s = word_tokenize(s)
     return tokenized_s
 
@@ -39,7 +43,6 @@ def load_stop_words():
     Get stop words list
     :return:
     """
-    nltk.download('stopwords')
     stopws = stopwords.words("english")
     stopws = np.array(stopws[:-36])  # for excluding "negation" words
     return stopws
@@ -113,17 +116,18 @@ def build_similarity_matrix(sentences, model, stopws):
     return matrix
 
 
-def find_top_n_sentences(matrix, n, sentences):
+def find_top_n_sentences(matrix, n, sentences, tol=0.001, max_iter=150):
     """
     Return the n most dissimilar sentences in the matrix
     :param matrix:
     :param n:
     :param sentences:
+    :param tol:
+    :param max_iter:
     :return:
     """
     graph = nx.from_numpy_array(matrix)
-    scores = nx.pagerank(graph)
-    #print(scores)
+    scores = nx.pagerank(graph, max_iter=max_iter, tol=tol)
     ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
     summary = []
     for i in range(0, n):
@@ -131,14 +135,28 @@ def find_top_n_sentences(matrix, n, sentences):
     return "\n".join(summary)
 
 
-def create_summary(sentences, model_fn="../glove.6B/glove.6B.50d.txt", n=5):
+def split_text_into_sentences(text):
+    """
+    Given a list of paragraphs return a list with one sentence per element
+    :param text:
+    :return:
+    """
+
+    sentences = []
+    for s in text:
+        sentences = sentences + nltk.sent_tokenize(s)
+    return sentences
+
+
+def create_summary(text, model_fn="../glove.6B/glove.6B.50d.txt", n=5):
     """
     Summarize the given text using n sentences.
-    :param sentences:
+    :param text: List of paragraphs containing the article's text
     :param model_fn:
     :param n:
     :return:
     """
+    sentences = split_text_into_sentences(text)
     stopws = load_stop_words()
     model = load_word_embedding_model(model_fn)
     matrix = build_similarity_matrix(sentences, model, stopws)
