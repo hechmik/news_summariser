@@ -14,12 +14,12 @@ if __name__ == "__main__":
     summariser.download_dependencies()
     # Load Word Embedding model
     model = summariser.load_word_embedding_model()
-    for feed in articles_infos:
-        for title in feed.keys():
+    for article in articles_infos:
+        for title in article.keys():
             print(title)
-            source = feed[title]['source']
+            source = article[title]['source']
             main_div_class = website_infos[source]['main_class']
-            article_url = feed[title]['url']
+            article_url = article[title]['url']
             print("source: {}, url: {}".format(source, article_url))
             text = scraper.scrape_page(article_url, main_div_class)
             if len(text) > 0:
@@ -34,6 +34,8 @@ if __name__ == "__main__":
                     summaries[title] = {}
                     summaries[title]['summary'] = summary
                     summaries[title]['url'] = article_url
+
+    feed.update_parsed_articles(articles_infos)
     print("Finished to summarise articles!")
     with open('output_summaries.json', 'w') as file:
         file.write(json.dumps(summaries))

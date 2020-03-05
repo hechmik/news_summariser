@@ -148,7 +148,7 @@ def split_text_into_sentences(text):
     return sentences
 
 
-def create_summary(text, model, n=4):
+def create_summary(text, model, n=4, split_paragraphs=False):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
@@ -156,8 +156,11 @@ def create_summary(text, model, n=4):
     :param n: how much to reduce the article. The summary length will be: (number of sentences)/n
     :return:
     """
-    sentences = split_text_into_sentences(text)
-    desired_summary_length = int(len(sentences)/n)
+    if split_paragraphs:
+        sentences = split_text_into_sentences(text)
+    else:
+        sentences = text
+    desired_summary_length = int(len(sentences) / n) + 1
     stopws = load_stop_words()
     matrix = build_similarity_matrix(sentences, model, stopws)
     summary = find_top_n_sentences(matrix, desired_summary_length, sentences)
