@@ -7,7 +7,7 @@ from scipy.spatial.distance import cosine
 import networkx as nx
 
 
-def load_word_embedding_model(fn):
+def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
     """
     Return the Word Embedding model at the given path
     :param fn: path where the model of interest is stored
@@ -132,7 +132,7 @@ def find_top_n_sentences(matrix, n, sentences, tol=0.001, max_iter=150):
     summary = []
     for i in range(0, n):
         summary.append(ranked_sentences[i][1])    
-    return "\n".join(summary)
+    return "".join(summary)
 
 
 def split_text_into_sentences(text):
@@ -148,17 +148,17 @@ def split_text_into_sentences(text):
     return sentences
 
 
-def create_summary(text, model_fn="../glove.6B/glove.6B.50d.txt", n=5):
+def create_summary(text, model, n=4):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
-    :param model_fn:
-    :param n:
+    :param model: Word Embeddings model
+    :param n: how much to reduce the article. The summary length will be: (number of sentences)/n
     :return:
     """
     sentences = split_text_into_sentences(text)
+    desired_summary_length = int(len(sentences)/n)
     stopws = load_stop_words()
-    model = load_word_embedding_model(model_fn)
     matrix = build_similarity_matrix(sentences, model, stopws)
-    summary = find_top_n_sentences(matrix, n, sentences)
+    summary = find_top_n_sentences(matrix, desired_summary_length, sentences)
     return summary
