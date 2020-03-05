@@ -25,14 +25,14 @@ if __name__ == "__main__":
             if len(text) > 0:
                 summary = ""
                 try:
-                    summary = summariser.create_summary(text)
+                    summary = summariser.create_summary(text, model)
                 except Exception as e:
                     print("unable to create summary for {}".format(article_url))
                     print(e)
 
                 if summary != "":
                     summaries[title] = {}
-                    summaries[title]['summary'] = summariser.create_summary(text, model)
+                    summaries[title]['summary'] = summary
                     summaries[title]['url'] = article_url
     print("Finished to summarise articles!")
     with open('output_summaries.json', 'w') as file:
