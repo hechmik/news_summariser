@@ -26,7 +26,8 @@ if __name__ == "__main__":
         website_infos = json.load(f)
     with open("config/settings.json", "r") as f:
         settings = json.load(f)
-    articles_infos = feed.get_feeds_articles(website_infos, settings['already_read_articles'])
+    already_read_articles_fn = settings['already_read_articles']
+    articles_infos = feed.get_feeds_articles(website_infos, already_read_articles_fn)
     summaries = {}
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
@@ -55,7 +56,7 @@ if __name__ == "__main__":
                     summaries[title]['summary'] = summary
                     summaries[title]['url'] = article_url
     logging.info("Finished to summarise articles!")
-    feed.update_parsed_articles(articles_infos)
-    with open('output_summaries.json', 'w') as file:
+    feed.update_parsed_articles(articles_infos, already_read_articles_fn)
+    with open(settings['summaries_fn'], 'w') as file:
         file.write(json.dumps(summaries))
     logging.info("Summaries stored")
