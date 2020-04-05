@@ -1,6 +1,6 @@
 {
-  "already_read_articles_fn": "../articles_db/parsed_articles.json",
-  "summaries_fn": "../output_summaries/output_summaries.json",
+  "already_read_articles_fn": "/news_summariser/articles_db/parsed_articles.json",
+  "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
   "summarise_paragraphs": true,
   "reduction_factor": 3
 }
