@@ -92,7 +92,7 @@ def vectorize_sentence(s, model, stopws, empty_vector_size=50):
         try:
             v.append(model[word])
         except Exception as e:
-            logging.error("Word {} not found in word embedding model: will replace it with zero vector".format(word))
+            logging.warn("Word {} not found in word embedding model: will replace it with zero vector".format(word))
             v.append(np.zeros(empty_vector_size)) #word not in the model
     logging.info("vectorize_sentence <<<")
     return np.mean(v, axis=0)
@@ -174,20 +174,20 @@ def split_text_into_sentences(text):
     return sentences
 
 
-def create_summary(text, model, n, split_paragraphs):
+def create_summary(text, model, n, use_paragraphs):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
     :param model: Word Embeddings model
     :param n: how much to reduce the article. The summary length will be: (number of text units)/n
-    :param split_paragraphs: if True the algorithm will pick the top sentences, otherwise the top paragraphs
+    :param use_paragraphs: if True the most meaning paragraphs will be chosen. Otherwise top n sentences will be picked
     :return:
     """
     logging.info("load_stop_words >>>")
-    if split_paragraphs:
-        sentences = split_text_into_sentences(text)
-    else:
+    if use_paragraphs:
         sentences = text
+    else:
+        sentences = split_text_into_sentences(text)
     desired_summary_length = int(len(sentences) / n) + 1
     stopws = load_stop_words()
     matrix = build_similarity_matrix(sentences, model, stopws)
