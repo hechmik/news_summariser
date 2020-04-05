@@ -12,7 +12,7 @@ def store_articles(data, filename):
     """
     logging.info("store_articles >>>")
     with open(filename, 'w') as f:
-        json.dump(data, f, indent=4)
+        f.write(json.dumps(data))
     logging.info("store_articles <<<")
 
 
