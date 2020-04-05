@@ -26,7 +26,7 @@ if __name__ == "__main__":
         website_infos = json.load(f)
     with open("config/settings.json", "r") as f:
         settings = json.load(f)
-    already_read_articles_fn = settings['already_read_articles']
+    already_read_articles_fn = settings['already_read_articles_fn']
     articles_infos = feed.get_feeds_articles(website_infos, already_read_articles_fn)
     summaries = {}
     # Download, if needed, necessary libraries for text processing
