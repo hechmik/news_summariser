@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.INFO,
+                        level=logging.WARN,
                         filename="news_summariser.log")
 
     # set up logging to console
@@ -24,7 +24,9 @@ if __name__ == "__main__":
 
     with open("config/websites.json", "r") as f:
         website_infos = json.load(f)
-    articles_infos = feed.get_feeds_articles(website_infos)
+    with open("config/settings.json", "r") as f:
+        settings = json.load(f)
+    articles_infos = feed.get_feeds_articles(website_infos, settings['already_read_articles'])
     summaries = {}
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
@@ -40,7 +42,10 @@ if __name__ == "__main__":
             if len(text) > 0:
                 summary = ""
                 try:
-                    summary = summariser.create_summary(text, model)
+                    summary = summariser.create_summary(text,
+                                                        model,
+                                                        settings['reduction_factor'],
+                                                        settings['summarise_paragraphs'])
                 except Exception as e:
                     logging.error("unable to create summary for {}".format(article_url))
                     logging.error(e)

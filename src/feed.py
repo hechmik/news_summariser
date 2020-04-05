@@ -3,7 +3,7 @@ import json
 import logging
 
 
-def store_articles(data, filename='articles.json'):
+def store_articles(data, filename):
     """
     Store articles as json file
     :param data: articles to memorize
@@ -16,7 +16,7 @@ def store_articles(data, filename='articles.json'):
     logging.info("store_articles <<<")
 
 
-def load_already_read_articles(filename='articles.json'):
+def load_already_read_articles(filename):
     logging.info("load_already_read_articles >>>")
     try:
         with open(filename, 'r') as f:
@@ -55,31 +55,33 @@ def get_website_article_link_title(feed_name, website):
     return articles_to_download
 
 
-def get_feeds_articles(config):
+def get_feeds_articles(news_dict, old_articles_fn):
     """
-    Return the link and title of articles in the given RSS feeds who have not yet been summarised
-    :param config: Dictionaries where websites infos such as feed URL are stored"
+    Return the link and title of articles in the given RSS feeds that have not yet been summarised
+    :param news_dict: Dictionaries where websites infos such as feed URL are stored
+    :param old_articles_fn: Path where already read articles are stored
     :return:
     """
     logging.info("get_feeds_articles >>>")
     articles_infos = []
-    for website in config.keys():
-        website_rss = config[website]['rss']
+    for website in news_dict.keys():
+        website_rss = news_dict[website]['rss']
         articles_infos.append(get_website_article_link_title(website_rss, website))
-    old_articles = load_already_read_articles()
+    old_articles = load_already_read_articles(old_articles_fn)
     articles_to_summarise = get_new_articles(old_articles, articles_infos)
     logging.info("get_feeds_articles <<<")
     return articles_to_summarise
 
 
-def update_parsed_articles(summarised_articles):
+def update_parsed_articles(summarised_articles, parsed_articles_fn):
     """
     Add the summarised articles in the JSON "DB" file
     :param summarised_articles: articles that were summarised during the last execution
+    :param parsed_articles_fn: filename where the JSON "DB" is stored
     :return:
     """
     logging.info("update_parsed_articles >>>")
-    old_articles = load_already_read_articles()
+    old_articles = load_already_read_articles(parsed_articles_fn)
     parsed_articles = old_articles + [x for x in summarised_articles if x not in old_articles]
-    store_articles(parsed_articles)
+    store_articles(parsed_articles, parsed_articles_fn)
     logging.info("update_parsed_articles <<<")
