@@ -174,7 +174,7 @@ def split_text_into_sentences(text):
     return sentences
 
 
-def create_summary(text, model, n=3, split_paragraphs=True):
+def create_summary(text, model, n, split_paragraphs):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
