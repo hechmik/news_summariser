@@ -1,7 +1,7 @@
 # Automatic News Summariser
 ## Introduction
 
-The goal of this project is to help me staying updated with the latest news about topics I care while saving me some precious time. Also, I think that in this way I will be able to drastically reduce the number of bookmarks in my browser, therefore it is a win-win situation.
+The goal of this project is to help me staying updated with the latest news about topics I care while saving some precious time. Also, I think that in this way I will be able to drastically reduce the number of bookmarks in my browser, therefore it is a win-win situation.
 
 At the moment I am focusing in creating an extractive summariser and only the *n* most meaningful phrases in a given article will be returned to the user: even though the summaries may not appear as fluent as the original sources, this choice greatly reduces the problem complexity.
 
@@ -45,6 +45,7 @@ In the next weeks I will work on the following points in order to improve the ne
 1. Use a proper DB for storing parsed articles: at the moment I am using a JSON file as a temporary solution
 2. Pick the most diverse (and meaningful) sentences in an alternative/simpler way: I am building, for each article, a graph and using PageRank for identifying most meaningful nodes. The procedure is quite heavy and in certain scenarios it doesn't converge to a solution
 3. Try other methods for picking the best sentences/paragraphs: at the moment I am assuming that most meaningful sentences have concepts that are infrequent in other parts.
+4. Send output summaries via Telegram and/or email
 4. Improve logging and add basic ELK pipeline for monitoring application status
 5. Find a way for getting articles' text without having to specify the div class
 
