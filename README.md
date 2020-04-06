@@ -8,7 +8,7 @@ At the moment I am focusing in creating an extractive summariser and only the *n
 ## High-level pipeline:
 In order to achieve my original goal the following operations are done:
 
-1. Most recent articles are obtained by subscribing to the websites of interest'RSS feeds
+1. Most recent articles are obtained by subscribing to the websites of interest' RSS feeds
 2. Each article is scraped in order to obtain the full text. This is done because in the majority of cases a RSS feed contain only the first of couple of the sentences, redirecting the user to the original website for all the infos
 3. An extractive summary is created for each article
 4. The summaries are sent back to the user. The first step will be to just store them on disk but I would like to experiment different output methods such as Telegram messages and/or emails.
