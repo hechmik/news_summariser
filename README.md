@@ -22,11 +22,11 @@ In the [src/config](src/config) directory you will find two files:
     - whether to summarise at "paragraph level" or "sentence level": I suggest to keep ```summarise_paragraphs``` set to True for more coherent summaries.
     - path where articles already summarised are stored (```already_read_articles_fn```)
     - path where summaries are stored (```summaries_fn```)
-- [websites.json](src/config/websites.json): Here you can specify the RSS feed URL(S) of your interests, along with the HTML div class that contains the article. Both infos are mandatory
+- [websites.json](src/config/websites.json): Here you can specify the RSS feed URL(S) of your interests, along with the HTML div class that contain the articles. Both infos are mandatory.
 ### 2. Build the docker image
 In order to do that you simply have to run the following instructions:
 ```bash
-docker build -t news_summariser
+docker build -t news_summariser .
 ```
 Please keep in mind that ~ 2 GBs of data will be downloaded: in particular the docker image *python:3* will be downloaded, along with the GloVe pretrained models.
 
@@ -37,7 +37,16 @@ Once the image has been created we can run a Docker container that will execute 
 docker run -v /Users/kappa/repositories/news_summariser/output_summaries:/news_summariser/output_summaries -v /Users/kappa/repositories/news_summariser/articles_db:/news_summariser/articles_db news_summariser
 ```
 Remember to change the volumes paths in order to reflect your current file system (the part before the ```:``` symbol) and eventual modification to the src/config/settings.json file (the part after the ```:```)
-Also thanks to the use of Docker volumes next executions will only summarise new articles and you will be to view all summaries by accessing your output_summaries/ directory.
+Also thanks to the use of Docker volumes next executions will only summarise new articles and you will be to view all summaries by accessing your ```output_summaries/``` directory.
+
+## Next steps
+
+In the next weeks I will work on the following points in order to improve the news summariser:
+1. Use a proper DB for storing parsed articles: at the moment I am using a JSON file as a temporary solution
+2. Pick the most diverse (and meaningful) sentences in an alternative/simpler way: I am building, for each article, a graph and using PageRank for identifying most meaningful nodes. The procedure is quite heavy and in certain scenarios it doesn't converge to a solution
+3. Try other methods for picking the best sentences/paragraphs: at the moment I am assuming that most meaningful sentences have concepts that are infrequent in other parts.
+4. Improve logging and add basic ELK pipeline for monitoring application status
+5. Find a way for getting articles' text without having to specify the div class
 
 ## Sources
 
