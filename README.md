@@ -15,7 +15,7 @@ In order to achieve my original goal the following operations are done:
 
 ## How to run the news summariser
 The preferred way to run this project is via Docker. The reason why is that in this way you will keep your environment clean and it is safe to assume that everything will work. In order to do this, assuming you have Docker installed on your machines you will need to execute the following instructions:
-#### 1. (Optional): Review the various configurations
+### 1. (Optional): Review the various configurations
 In the [src/config](src/config) directory you will find two files:
 - [settings.json](src/config/settings.json): In this file you can choose:
     - the "reduction factor" of the output summaries: with a ```reduction_factor``` of 3 an article having N paragraphs/sentences will be summarised using N/3 paragraphs/sentences
