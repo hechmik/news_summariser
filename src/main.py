@@ -9,8 +9,8 @@ if __name__ == "__main__":
 
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.WARN,
-                        filename="news_summariser.log")
+                        level=logging.INFO,
+                        filename="/news_summariser/log/news_summariser.log")
 
     # set up logging to console
     console = logging.StreamHandler()
@@ -40,15 +40,16 @@ if __name__ == "__main__":
         article_url = articles_infos[title]['url']
         logging.debug("source: {}, url: {}".format(source, article_url))
         text = scraper.scrape_page(article_url, main_div_class)
-        if len(text) > 0:
+
+        if text:
             summary = ""
             try:
                 summary = summariser.create_summary(text,
                                                     model,
-                                                    settings['reduction_factor'],
-                                                    settings['summarise_paragraphs'])
+                                                    n=settings['reduction_factor'],
+                                                    use_paragraphs=settings['summarise_paragraphs'])
             except Exception as e:
-                logging.error("unable to create summary for {}".format(article_url))
+                logging.error("Unable to create summary for {}".format(article_url))
                 logging.error(e)
 
             if summary != "":
@@ -59,9 +60,8 @@ if __name__ == "__main__":
     # Store summaries and update DB only if there are new summaries
     if summaries != {}:
         summary_fn = settings['summaries_fn'].format(str(datetime.now()))
-        logging.info("Summaries stored")
         with open(summary_fn, 'w') as file:
             file.write(json.dumps(summaries))
+        logging.info("Summaries stored")
         feed.update_parsed_articles(articles_infos, already_read_articles_fn)
-
         logging.info("Updated articles db")
