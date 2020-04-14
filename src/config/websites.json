@@ -6,5 +6,13 @@
 	"The Verge": {
 		"rss": "https://www.theverge.com/rss/index.xml",
 		"main_class": "c-entry-content"
+	},
+	"Wired UK": {
+		"rss": "https://www.wired.co.uk/rss/article",
+		"main_class": "a-body__content has-bbcode"
+	},
+	"Foreign Affairs": {
+		"rss": "https://www.foreignaffairs.com/rss.xml",
+		"main_class": "inner article-dropcap-body fa-paywall--ajax-fill"
 	}
 }
