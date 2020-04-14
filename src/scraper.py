@@ -12,7 +12,7 @@ def scrape_page(link, article_class):
     """
     logging.info("scrape_page >>>")
     try:
-        page = requests.get(link)
+        page = requests.get(link, timeout=5)
         soup = BeautifulSoup(page.content, 'html.parser')
         article_content = soup.body.find(class_=article_class)
         article = []
