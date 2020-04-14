@@ -11,17 +11,18 @@ def scrape_page(link, article_class):
     :return:
     """
     logging.info("scrape_page >>>")
-    page = requests.get(link) 
-    soup = BeautifulSoup(page.content, 'html.parser')
-    article_content = soup.body.find(class_=article_class)
-    article = []
     try:
+        page = requests.get(link)
+        soup = BeautifulSoup(page.content, 'html.parser')
+        article_content = soup.body.find(class_=article_class)
+        article = []
         for paragraph in article_content.find_all('p'):
             sentence = paragraph.get_text()
             if sentence != "":
                 article.append(paragraph.get_text())
-    except AttributeError:
+    except AttributeError as ae:
         logging.error("Can't find article text for {}".format(link))
+        logging.error(ae)
     except Exception as e:
         logging.error("Error while parsing article {}".format(link))
         logging.error(e)
