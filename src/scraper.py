@@ -12,7 +12,14 @@ def scrape_page(link, article_class):
     """
     logging.info("scrape_page >>>")
     try:
-        page = requests.get(link, timeout=5)
+        logging.info(link)
+        user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+        headers = {'User-Agent': user_agent}
+        article = []
+        # If the link is a podcast don't bother downloading it
+        if link.endswith(".mp3"):
+            return article
+        page = requests.get(link, timeout=3, headers=headers)
         soup = BeautifulSoup(page.content, 'html.parser')
         article_content = soup.body.find(class_=article_class)
         article = []
