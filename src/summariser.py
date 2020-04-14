@@ -43,9 +43,9 @@ def tokenize_sentence(s):
     :param s: String containing sentence(s)
     :return:
     """
-    logging.info("tokenize_sentence >>>")
+    logging.debug("tokenize_sentence >>>")
     tokenized_s = word_tokenize(s)
-    logging.info("tokenize_sentence <<<")
+    logging.debug("tokenize_sentence <<<")
     return tokenized_s
 
 
@@ -68,12 +68,12 @@ def preprocess_text(s, stopws):
     :param stopws: list of stop words to remove
     :return:
     """
-    logging.info("preprocess_text >>>")
+    logging.debug("preprocess_text >>>")
     s = s.lower()
     s = re.sub('[^A-Za-z0-9 ]+', ' ', s)
     s = tokenize_sentence(s)
     s = [word for word in s if word not in stopws]
-    logging.info("preprocess_text <<<")
+    logging.debug("preprocess_text <<<")
     return s
 
 
@@ -86,7 +86,7 @@ def vectorize_sentence(s, model, stopws, empty_vector_size=50):
     :param empty_vector_size: size of the vector of zeros that will replace a word not found in the model
     :return:
     """
-    logging.info("vectorize_sentence >>>")
+    logging.debug("vectorize_sentence >>>")
     v = []
     for word in preprocess_text(s, stopws):
         try:
@@ -94,7 +94,7 @@ def vectorize_sentence(s, model, stopws, empty_vector_size=50):
         except Exception as e:
             logging.warn("Word {} not found in word embedding model: will replace it with zero vector".format(word))
             v.append(np.zeros(empty_vector_size)) #word not in the model
-    logging.info("vectorize_sentence <<<")
+    logging.debug("vectorize_sentence <<<")
     return np.mean(v, axis=0)
 
 
@@ -107,11 +107,11 @@ def compute_sentence_similarity(s1, s2, model, stopws):
     :param stopws: stopwords list to remove
     :return:
     """
-    logging.info("compute_sentence_similarity >>>")
+    logging.debug("compute_sentence_similarity >>>")
     vector_1 = vectorize_sentence(s1, model, stopws)
     vector_2 = vectorize_sentence(s2, model, stopws)
     sim = cosine(vector_1, vector_2)
-    logging.info("compute_sentence_similarity <<<")
+    logging.debug("compute_sentence_similarity <<<")
     return sim
 
 
@@ -166,11 +166,11 @@ def split_text_into_sentences(text):
     :param text:
     :return:
     """
-    logging.info("split_text_into_sentences >>>")
+    logging.debug("split_text_into_sentences >>>")
     sentences = []
     for s in text:
         sentences = sentences + nltk.sent_tokenize(s)
-    logging.info("split_text_into_sentences <<<")
+    logging.debug("split_text_into_sentences <<<")
     return sentences
 
 
