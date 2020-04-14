@@ -34,7 +34,7 @@ Please keep in mind that ~ 2 GBs of data will be downloaded: in particular the d
 
 Once the image has been created we can run a Docker container that will execute the project. For doing that just execute the following instruction:
 ```bash
-docker run -v /Users/kappa/repositories/news_summariser/output_summaries:/news_summariser/output_summaries -v /Users/kappa/repositories/news_summariser/articles_db:/news_summariser/articles_db news_summariser
+docker run -v /Users/kappa/repositories/news_summariser/output_summaries:/news_summariser/output_summaries -v /Users/kappa/repositories/news_summariser/articles_db:/news_summariser/articles_db -v /Users/kappa/repositories/news_summariser/log:/news_summariser/log news_summariser
 ```
 Remember to change the volumes paths in order to reflect your current file system (the part before the ```:``` symbol) and eventual modification to the src/config/settings.json file (the part after the ```:```)
 Also thanks to the use of Docker volumes next executions will only summarise new articles and you will be to view all summaries by accessing your ```output_summaries/``` directory.
