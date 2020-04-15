@@ -3,11 +3,12 @@ from bs4 import BeautifulSoup
 import logging
 
 
-def scrape_page(link, article_class):
+def scrape_page(link, article_class, number_of_paragraphs_to_ignore):
     """
     Return the entire article in the given link
     :param link: Article URL
-    :param article_class: CSS Class of the dive that contains all the article paragraphs.
+    :param article_class: CSS Class of the dive that contains all the article paragraphs
+    :param number_of_paragraphs_to_ignore: how many paragraphs should be skipped, starting from the end of the article
     :return:
     """
     logging.info("scrape_page >>>")
@@ -23,7 +24,12 @@ def scrape_page(link, article_class):
         soup = BeautifulSoup(page.content, 'html.parser')
         article_content = soup.body.find(class_=article_class)
         article = []
-        for paragraph in article_content.find_all('p'):
+        paragraphs = article_content.find_all('p')
+        # Some news websites have, at the end, paragraphs such as contacts: let's ignore them.
+        if number_of_paragraphs_to_ignore > 0:
+            paragraphs = paragraphs[:-number_of_paragraphs_to_ignore]
+
+        for paragraph in paragraphs:
             sentence = paragraph.get_text()
             if sentence != "":
                 article.append(paragraph.get_text())

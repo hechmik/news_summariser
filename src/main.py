@@ -39,7 +39,9 @@ if __name__ == "__main__":
         main_div_class = website_infos[source]['main_class']
         article_url = articles_infos[title]['url']
         logging.debug("source: {}, url: {}".format(source, article_url))
-        text = scraper.scrape_page(article_url, main_div_class)
+        text = scraper.scrape_page(article_url,
+                                   main_div_class,
+                                   website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
             summary = ""
