@@ -1,6 +1,22 @@
 import requests
 from bs4 import BeautifulSoup
 import logging
+import re
+
+
+def is_article_a_multimedia_page(link):
+    """
+    Check if the given link is a multimedia one or not. This is done by simply looking at the final extension
+    :param link: URL address
+    :return:
+    """
+
+    if link.endswith(".html"):
+        return False
+    elif re.match("(http(s)?:\/\/.+\/.+)(\.[a-z0-9]+)", link):
+        return True
+    else:
+        return False
 
 
 def scrape_page(link, article_class, number_of_paragraphs_to_ignore):
@@ -17,8 +33,7 @@ def scrape_page(link, article_class, number_of_paragraphs_to_ignore):
         user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
         headers = {'User-Agent': user_agent}
         article = []
-        # If the link is a podcast don't bother downloading it
-        if link.endswith(".mp3"):
+        if is_article_a_multimedia_page(link):
             return article
         page = requests.get(link, timeout=3, headers=headers)
         soup = BeautifulSoup(page.content, 'html.parser')
@@ -28,7 +43,6 @@ def scrape_page(link, article_class, number_of_paragraphs_to_ignore):
         # Some news websites have, at the end, paragraphs such as contacts: let's ignore them.
         if number_of_paragraphs_to_ignore > 0:
             paragraphs = paragraphs[:-number_of_paragraphs_to_ignore]
-
         for paragraph in paragraphs:
             sentence = paragraph.get_text()
             if sentence != "":
