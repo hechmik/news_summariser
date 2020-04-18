@@ -101,7 +101,7 @@ def preprocess_text(s, stopws, lemmatiser):
     s = re.sub('[^A-Za-z0-9 ]+', ' ', s)
     s = tokenize_sentence(s)
     s = [word for word in s if word not in stopws]
-    s = [get_word_lemma(word, lemmatiser) for word in s]
+    s = [get_word_lemma(lemmatiser, word) for word in s]
     logging.debug("preprocess_text <<<")
     return s
 
