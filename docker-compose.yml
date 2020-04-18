@@ -1,0 +1,11 @@
+version: "2.1"
+
+services:
+  app:
+    container_name: app
+    build: .
+    command: python3 ./main.py
+    volumes:
+      - ./output_summaries:/news_summariser/output_summaries
+      - ./articles_db:/news_summariser/articles_db
+      - ./log:/news_summariser/log

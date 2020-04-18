@@ -27,29 +27,14 @@ In the [src/config](src/config) directory you will find two files:
     - ```main_class```: the HTML *div class* that contains the article(s)
     - ```number_of_last_paragraphs_to_ignore```. In some websites, such as Wired UK, the last paragraphs have not relevant information (e.g. social media links, related articles ).
         If you specify a given number *n*, the last n paragraph would be ignored. If *n* == 0 all the paragraph in the specified *div* tag will be collected.    
-### 2. Build the docker image
-In order to do that you simply have to run the following instruction:
-```bash
-./build.sh
-```
-If you prefer the complete instruction type the following command in your terminal:
-```bash
-docker build -t news_summariser .
-```
-Please keep in mind that ~ 2 GBs of data will be downloaded: in particular the docker image *python:3* will be downloaded, along with the GloVe pretrained models.
+### 2. Build & launch the project
 
-### 3. Launch the project
+In order to run and stop the project we use [Docker Compose](https://docs.docker.com/compose/); this will also build the Docker containers on first run and will re-use them on later executions. Run `docker-compose up` in the root folder to launch the project.
 
-Once the image has been created we can run a Docker container that will execute the whole project. For doing that just execute the following instruction:
-```bash
-./launch_app.sh
-```
-Otherwise the complete Docker instruction is: 
-```bash
-docker run --rm -v /Users/kappa/repositories/news_summariser/output_summaries:/news_summariser/output_summaries -v /Users/kappa/repositories/news_summariser/articles_db:/news_summariser/articles_db -v /Users/kappa/repositories/news_summariser/log:/news_summariser/log news_summariser
-```
-In both cases remember to change the volumes paths in order to reflect your current file system (the part before the ```:``` symbol) and eventual modification to the [settings.json](src/config/settings.json) file (the part after the ```:```)
-Also thanks to the use of Docker volumes next executions will only summarise new articles and you will be to view all summaries by accessing your ```output_summaries/``` directory.
+Useful commands:
+- `docker-compose up -d`: starts the project, the `-d` flag run containers in the background
+- `docker-compose down`: stops the containers
+- `docker-compose build`: re-build containers without starting (possible to use the `--no-cache` flag)
 
 ## Next steps
 
