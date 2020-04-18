@@ -1,5 +1,6 @@
 import unittest
 import src.scraper as scraper
+import src.summariser as summariser
 
 
 class ScraperUT(unittest.TestCase):
@@ -25,6 +26,25 @@ class ScraperUT(unittest.TestCase):
         reduced_page = scraper.scrape_page(self.url, self.url_class, number_of_paragraphs_to_skip)
         self.assertTrue(len(page) == len(reduced_page) + 2)
         self.assertTrue(page[:-number_of_paragraphs_to_skip] == reduced_page)
+
+
+class SummariserUT(unittest.TestCase):
+
+    def test_lemmatiser(self):
+        
+        summariser.download_dependencies()
+        lemmatiser = summariser.initialise_lemmatiser()
+        w = "queen"
+        lemma = "queen"
+        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of the word \"queen\" is queen:")
+
+        w = "champions"
+        lemma = "champion"
+        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of champions is its singular version, champion")
+
+        w = "khaled"
+        lemma = "khaled"
+        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of an unknown word is the same word")
 
 
 if __name__ == '__main__':
