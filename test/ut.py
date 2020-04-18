@@ -4,7 +4,6 @@ import src.summariser as summariser
 
 
 class ScraperUT(unittest.TestCase):
-
     url = "https://www.wired.co.uk/article/big-tech-geopolitics"
     url_class = "a-body__content has-bbcode"
     link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian-revolution.html"
@@ -12,14 +11,12 @@ class ScraperUT(unittest.TestCase):
     link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram-embed-copyright-lawsuit-dismissed.avi"
 
     def test_is_article_a_multimedia_page(self):
-
         self.assertFalse(scraper.is_article_a_multimedia_page(self.url))
         self.assertFalse(scraper.is_article_a_multimedia_page(self.link_with_html_extension))
         self.assertTrue(scraper.is_article_a_multimedia_page(self.link_with_mp4_extension))
         self.assertTrue(scraper.is_article_a_multimedia_page(self.link_with_avi_extension))
 
     def test_download_page(self):
-
         page = scraper.scrape_page(self.url, self.url_class, 0)
         self.assertTrue(len(page) > 0)
         number_of_paragraphs_to_skip = 2
@@ -29,22 +26,37 @@ class ScraperUT(unittest.TestCase):
 
 
 class SummariserUT(unittest.TestCase):
+    summariser.download_dependencies()
+    lemmatiser = summariser.initialise_lemmatiser()
+    stopws = summariser.load_stop_words()
 
     def test_lemmatiser(self):
-        
-        summariser.download_dependencies()
-        lemmatiser = summariser.initialise_lemmatiser()
         w = "queen"
         lemma = "queen"
-        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of the word \"queen\" is queen:")
+        self.assertEqual(lemma, summariser.get_word_lemma(self.lemmatiser, w),
+                         "The lemma of the word \"queen\" is queen:")
 
         w = "champions"
         lemma = "champion"
-        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of champions is its singular version, champion")
+        self.assertEqual(lemma, summariser.get_word_lemma(self.lemmatiser, w),
+                         "The lemma of champions is its singular version, champion")
 
         w = "khaled"
         lemma = "khaled"
-        self.assertEqual(lemma, summariser.get_word_lemma(lemmatiser, w), "The lemma of an unknown word is the same word")
+        self.assertEqual(lemma, summariser.get_word_lemma(self.lemmatiser, w),
+                         "The lemma of an unknown word is the same word")
+
+    def test_preprocess_text(self):
+        input = "Hi! My name is Khaled"
+        expected_output = ["hi", "name", "khaled"]
+
+        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+                         "Stop words and special characters are removed and text is lowercased")
+
+        input = "@Classes!"
+        expected_output = ["class"]
+        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+                         "Special characters are removed and lemmatisation is applied")
 
 
 if __name__ == '__main__':
