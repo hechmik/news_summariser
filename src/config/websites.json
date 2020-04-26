@@ -2,16 +2,25 @@
 	"The Guardian-International": {
 		"rss": "https://www.theguardian.com/international/rss",
 		"main_class": "content__article-body from-content-api js-article__body",
+		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	},
 	"The Verge": {
 		"rss": "https://www.theverge.com/rss/index.xml",
 		"main_class": "c-entry-content",
+		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	},
 	"Wired UK": {
 		"rss": "https://www.wired.co.uk/rss/article",
 		"main_class": "a-body__content has-bbcode",
+		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 6
+	},
+	"Politico": {
+		"rss": "https://www.politico.eu/feed/",
+		"main_class": "story-text has-sidebar",
+		"number_of_first_paragraphs_to_ignore": 5,
+		"number_of_last_paragraphs_to_ignore": 0
 	}
 }

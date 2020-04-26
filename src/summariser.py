@@ -1,4 +1,6 @@
 import math
+from typing import List
+
 import numpy as np
 import nltk
 import re
@@ -75,7 +77,7 @@ def initialise_lemmatiser():
     return wn_lemmatiser
 
 
-def get_word_lemma(lemmatiser, w):
+def get_word_lemma(lemmatiser, w: str):
     """
     Apply lemmatisation to the given word using WordNet as resource
     :param lemmatiser: Lemmatiser instance to use for transforming the input word
@@ -88,7 +90,7 @@ def get_word_lemma(lemmatiser, w):
     return lemma
 
 
-def preprocess_text(s, stopws, lemmatiser):
+def preprocess_text(s: str, stopws, lemmatiser):
     """
     Preprocess the given text by lowercasing, removing special chars, tokenization and removing stop words
     :param s: text to preprocess
@@ -98,6 +100,8 @@ def preprocess_text(s, stopws, lemmatiser):
     """
     logging.debug("preprocess_text >>>")
     s = s.lower()
+    #Remove tabs, trailing spaces etc.
+    s = " ".join(s.split())
     s = re.sub('[^A-Za-z0-9 ]+', ' ', s)
     s = tokenize_sentence(s)
     s = [word for word in s if word not in stopws]
@@ -106,7 +110,7 @@ def preprocess_text(s, stopws, lemmatiser):
     return s
 
 
-def vectorize_sentence(s, model, stopws, lemmatiser, empty_vector_size=50):
+def vectorize_sentence(s: str, model, stopws, lemmatiser, empty_vector_size=50):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param s: string containing sentence
@@ -128,7 +132,7 @@ def vectorize_sentence(s, model, stopws, lemmatiser, empty_vector_size=50):
     return np.mean(v, axis=0)
 
 
-def compute_sentence_similarity(s1, s2, model, stopws, lemmatiser):
+def compute_sentence_similarity(s1: str, s2: str, model, stopws, lemmatiser):
     """
     Return the similarity of two sentences
     :param s1: first sentence
@@ -146,7 +150,7 @@ def compute_sentence_similarity(s1, s2, model, stopws, lemmatiser):
     return sim
 
 
-def build_similarity_matrix(sentences, model, stopws, lemmatiser):
+def build_similarity_matrix(sentences: List[str], model, stopws, lemmatiser):
     """
     Compute the similarity matrix related to all input sentences
     :param sentences: list of sentences to compare
@@ -170,7 +174,7 @@ def build_similarity_matrix(sentences, model, stopws, lemmatiser):
     return matrix
 
 
-def find_top_n_sentences(matrix, n, sentences, tol=0.01, max_iter=150):
+def find_top_n_sentences(matrix, n: int, sentences: List[str], tol=0.01, max_iter=150):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.
     :param matrix: sentences similarity matrix
@@ -221,7 +225,7 @@ def filter_sentences_by_length(sentences, min_words_in_sentence):
     return sentences
 
 
-def create_summary(text, model, n, min_words_in_sentence):
+def create_summary(text: List[str], model, n: int, min_words_in_sentence: int):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
