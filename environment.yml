@@ -1,0 +1,14 @@
+name: summariser
+channels:
+  - defaults
+dependencies:
+  - bs4
+  - tinydb
+  - feedparser
+  - numpy
+  - scipy
+  - nltk
+  - networkx
+  - requests
+prefix: /Users/kappa/opt/miniconda3/envs/summariser
+

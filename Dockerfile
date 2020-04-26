@@ -1,17 +1,21 @@
 # Download base image
-FROM python:3
-# Create the folder where all code will be put
+FROM continuumio/miniconda3
+# Create the folder where all code, dependencies and models will be put
 RUN mkdir /news_summariser
-# Copy the requirements file
-ADD requirements.txt /news_summariser
-# Install needed libraries
-RUN pip3 install -r /news_summariser/requirements.txt
 # Download GloVe model
 RUN wget http://nlp.stanford.edu/data/glove.6B.zip
+# Install unzip
+RUN apt-get install unzip
 # Unzip it
 RUN unzip glove.6B.zip -d /news_summariser/glove.6B
 # Remove the original file just for saving ~ 800 MB
 RUN rm -rf glove.6B.zip
+# Copy environment
+ADD environment.yml /news_summariser
+# Add conda-forge among available channels
+RUN conda config --append channels conda-forge
+# Create environment
+RUN conda env create -f /news_summariser/environment.yml
 # Copy code in the appropriate directory
 ADD src /news_summariser/src
 # Create directories where summaries, logs and parsed articles will be saved
@@ -21,4 +25,4 @@ VOLUME /news_summariser/output_summaries /news_summariser/articles_db /news_summ
 # Change workdir
 WORKDIR "/news_summariser/src"
 # Let the music play :)
-CMD [ "python3", "./main.py" ]
+ENTRYPOINT ["conda", "run", "-n", "summariser", "python3", "./main.py" ]
