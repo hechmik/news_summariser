@@ -6,7 +6,6 @@ import json
 from datetime import datetime
 
 if __name__ == "__main__":
-
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                         level=logging.INFO,
@@ -20,6 +19,7 @@ if __name__ == "__main__":
                                   datefmt="%d-%m-%Y %H:%M:%S")
     console.setFormatter(formatter)
     logging.getLogger("").addHandler(console)
+
     logging.info('Application started')
     # Load configuration files
     with open("config/websites.json", "r") as f:
@@ -49,7 +49,7 @@ if __name__ == "__main__":
                 summary = summariser.create_summary(text,
                                                     model,
                                                     n=settings['reduction_factor'],
-                                                    use_paragraphs=settings['summarise_paragraphs'])
+                                                    min_words_in_sentence=settings['min_words_in_sentence'])
             except Exception as e:
                 logging.error("Unable to create summary for {}".format(article_url))
                 logging.error(e)
@@ -58,6 +58,7 @@ if __name__ == "__main__":
                 summaries[title] = {}
                 summaries[title]['summary'] = summary
                 summaries[title]['url'] = article_url
+
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries != {}:

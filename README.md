@@ -19,7 +19,7 @@ The preferred way to run this project is via Docker. The reason why is that in t
 In the [src/config](src/config) directory you will find two files:
 - [settings.json](src/config/settings.json): In this file you can choose:
     - the "reduction factor" of the output summaries: with a ```reduction_factor``` of 3 an article having N paragraphs/sentences will be summarised using N/3 paragraphs/sentences
-    - whether to summarise at "paragraph level" or "sentence level": I suggest to keep ```summarise_paragraphs``` set to True for more coherent summaries.
+    - the minimum number of words a sentence must have in order to be included in the summary (```min_words_in_sentence```). The default value is 0, meaning that all sentences can be included in the summary
     - path where articles already summarised are stored (```already_read_articles_fn```)
     - path where summaries are stored (```summaries_fn```)
 - [websites.json](src/config/websites.json). Here you can specify one key for each website you intend to summarise, whose keys are:

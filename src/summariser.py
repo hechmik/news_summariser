@@ -4,7 +4,7 @@ import nltk
 import re
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.stem import 	WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer
 from scipy.spatial.distance import cosine
 import networkx as nx
 import logging
@@ -90,7 +90,7 @@ def get_word_lemma(lemmatiser, w):
 
 def preprocess_text(s, stopws, lemmatiser):
     """
-    Preprocess the given text by applying lowercasing, removal of special chars, tokenization and stop words removal
+    Preprocess the given text by lowercasing, removing special chars, tokenization and removing stop words
     :param s: text to preprocess
     :param stopws: list of stop words to remove
     :param lemmatiser lemmatiser instance to use for transforming words
@@ -123,7 +123,7 @@ def vectorize_sentence(s, model, stopws, lemmatiser, empty_vector_size=50):
             v.append(model[word])
         except Exception as e:
             logging.warning("Word {} not found in WE model: replacing it with vector of 0s".format(word))
-            v.append(np.zeros(empty_vector_size)) # word not in the model
+            v.append(np.zeros(empty_vector_size))  # word not in the model
     logging.debug("vectorize_sentence <<<")
     return np.mean(v, axis=0)
 
@@ -187,7 +187,7 @@ def find_top_n_sentences(matrix, n, sentences, tol=0.01, max_iter=150):
     summary = []
     for i in range(0, n):
         summary.append(ranked_sentences[i][1])
-    text = "".join(summary)
+    text = " ".join(summary)
     logging.info("find_top_n_sentences <<<")
     return text
 
@@ -199,27 +199,40 @@ def split_text_into_sentences(text):
     :return:
     """
     logging.debug("split_text_into_sentences >>>")
-    sentences = []
-    for s in text:
-        sentences = sentences + nltk.sent_tokenize(s)
+    if type(text) == str:
+        split_text = nltk.sent_tokenize(text)
+    elif isinstance(text, list):
+        split_text = []
+        for s in text:
+            split_text = split_text + nltk.sent_tokenize(s)
     logging.debug("split_text_into_sentences <<<")
+    return split_text
+
+
+def filter_sentences_by_length(sentences, min_words_in_sentence):
+    """
+    Return sentences whose length is equal or greater than the required one
+    :param sentences: list of sentences
+    :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
+    :return:
+    """
+    if min_words_in_sentence > 0:
+        sentences = [s for s in sentences if len(s.split()) >= min_words_in_sentence]
     return sentences
 
 
-def create_summary(text, model, n, use_paragraphs):
+def create_summary(text, model, n, min_words_in_sentence):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
     :param model: Word Embeddings model
     :param n: how much to reduce the article. The summary length will be: (number of text units)/n
-    :param use_paragraphs: if True the most meaning paragraphs will be chosen. Otherwise top n sentences will be picked
+    :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :return:
     """
     logging.info("load_stop_words >>>")
-    if use_paragraphs:
-        sentences = text
-    else:
-        sentences = split_text_into_sentences(text)
+    sentences = split_text_into_sentences(text)
+    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     desired_summary_length = math.ceil(len(sentences) / n)
     stopws = load_stop_words()
     lemmatiser = initialise_lemmatiser()
@@ -227,3 +240,6 @@ def create_summary(text, model, n, use_paragraphs):
     summary = find_top_n_sentences(matrix, desired_summary_length, sentences)
     logging.info("load_stop_words <<<")
     return summary
+
+
+

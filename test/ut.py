@@ -58,6 +58,30 @@ class SummariserUT(unittest.TestCase):
         self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
                          "Special characters are removed and lemmatisation is applied")
 
+    def test_split_text_into_sentences(self):
+
+        text = "Hi to everyone! I am Khaled"
+        expected_output = ["Hi to everyone!", "I am Khaled"]
+        self.assertEqual(expected_output, summariser.split_text_into_sentences(text),
+                         "The method is able to split sentences in a single string ")
+        text = ["Hi! My Name is Khaled",
+                "I am 25 years old.",
+                "This is another paragraph: what do you think? I hope you like it"]
+        expected_output = ["Hi!",
+                           "My Name is Khaled",
+                           "I am 25 years old.",
+                           "This is another paragraph: what do you think?",
+                           "I hope you like it"]
+        self.assertEqual(expected_output, summariser.split_text_into_sentences(text),
+                         "The method is able to split sentences in a list")
+
+    def test_filter_sentences_by_length(self):
+        text = ["Short sentence", "This, instead, is a long sentence"]
+        min_length = 0
+        self.assertEqual(text, summariser.filter_sentences_by_length(text, min_length))
+        min_length = 3
+        self.assertEqual([text[1]], summariser.filter_sentences_by_length(text, min_length))
+
 
 if __name__ == '__main__':
     unittest.main()
