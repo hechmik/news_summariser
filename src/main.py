@@ -1,6 +1,7 @@
 import feed
 import summariser
 import scraper
+import database_io
 import logging
 import json
 from datetime import datetime
@@ -27,20 +28,23 @@ if __name__ == "__main__":
     with open("config/settings.json", "r") as f:
         settings = json.load(f)
 
-    already_read_articles_fn = settings['already_read_articles_fn']
-    articles_infos = feed.get_feeds_articles(website_infos, already_read_articles_fn)
-    summaries = {}
+    db_path = settings['db_path']
+    # Get the list of articles summarised in the past
+    old_articles = database_io.get_already_summarised_articles(db_path)
+    articles_infos = feed.get_feeds_articles(website_infos, old_articles)
+    summaries = []
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
     model = summariser.load_word_embedding_model()
-    for title in articles_infos.keys():
-        source = articles_infos[title]['source']
+    for article in articles_infos:
+        source = article['source']
         main_div_class = website_infos[source]['main_class']
-        article_url = articles_infos[title]['url']
+        article_url = article['url']
         logging.debug("source: {}, url: {}".format(source, article_url))
         text = scraper.scrape_page(article_url,
                                    main_div_class,
+                                   website_infos[source]['number_of_first_paragraphs_to_ignore'],
                                    website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
@@ -55,16 +59,17 @@ if __name__ == "__main__":
                 logging.error(e)
 
             if summary != "":
-                summaries[title] = {}
-                summaries[title]['summary'] = summary
-                summaries[title]['url'] = article_url
+                current_article_summary_info = {"title": article['title'],
+                                                "summary": summary,
+                                                "url": article_url}
+                summaries.append(current_article_summary_info)
 
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
-    if summaries != {}:
+    if summaries:
         summary_fn = settings['summaries_fn'].format(str(datetime.now()))
         with open(summary_fn, 'w') as file:
             file.write(json.dumps(summaries))
         logging.info("Summaries stored")
-        feed.update_parsed_articles(articles_infos, already_read_articles_fn)
-        logging.info("Updated articles db")
+        database_io.update_parsed_articles(articles_infos, db_path)
+        logging.info("Articles db updated!")

@@ -1,5 +1,5 @@
 {
-  "already_read_articles_fn": "/news_summariser/articles_db/parsed_articles.json",
+  "db_path": "/news_summariser/articles_db/parsed_articles.json",
   "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
   "min_words_in_sentence": 0,
   "reduction_factor": 3
