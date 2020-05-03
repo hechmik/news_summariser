@@ -2,5 +2,6 @@
   "db_path": "/news_summariser/articles_db/parsed_articles.json",
   "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
   "min_words_in_sentence": 0,
-  "reduction_factor": 3
+  "reduction_factor": 3,
+  "algorithm": "tf_idf"
 }
