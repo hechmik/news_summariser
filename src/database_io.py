@@ -14,11 +14,10 @@ def get_already_summarised_articles(filename: str):
         db = TinyDB(filename)
         q = Query()
         articles_already_read = db.search(q.title.exists())
+        db.close()
     except Exception as ex:
         logging.error(ex)
         articles_already_read = {}
-    if db:
-        db.close()
     logging.info("load_already_read_articles <<<")
     return articles_already_read
 
