@@ -58,6 +58,7 @@ class SummariserUT(unittest.TestCase):
     summariser.download_dependencies()
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
+    model = summariser.load_word_embedding_model("/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
 
     def test_lemmatiser(self):
         w = "queen"
@@ -77,13 +78,13 @@ class SummariserUT(unittest.TestCase):
 
     def test_preprocess_text(self):
         input = "Hi! My name is Khaled"
-        expected_output = ["hi", "name", "khaled"]
+        expected_output = "hi name khaled"
 
         self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
                          "Stop words and special characters are removed and text is lowercased")
 
         input = "@Classes!"
-        expected_output = ["class"]
+        expected_output = "class"
         self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
                          "Special characters are removed and lemmatisation is applied")
 
@@ -109,6 +110,38 @@ class SummariserUT(unittest.TestCase):
         self.assertEqual(text, summariser.filter_sentences_by_length(text, min_length))
         min_length = 3
         self.assertEqual([text[1]], summariser.filter_sentences_by_length(text, min_length))
+
+    def test_get_sentences_by_score(self):
+        text = ["hi, my name is khaled and yours?",
+                "i like watching movies",
+                "my favourite tv show is made by another khaled",
+                "the movie i hate the most is titanic and yours?"]
+        scores = [100, 50, 110, 1]
+        scored_sentences = summariser.get_sentences_by_scores(n=4, scores=scores, sentences=text, maximise_score=True)
+        self.assertEqual(text, scored_sentences,
+                         "If summary length is equal to the original text length they should be the same")
+
+        scored_sentences = summariser.get_sentences_by_scores(n=2, scores=scores, sentences=text, maximise_score=True)
+        expected_output = [text[0], text[2]]
+        self.assertEqual(expected_output, scored_sentences,
+                         "Check if the summary has the first and third sentence")
+
+    def test_create_summary(self):
+        text = ["hi, my name is khaled and yours?",
+                "i like watching movies",
+                "my favourite tv show is made by another khaled :) ",
+                "the movie i hate the most is titanic and yours?"]
+
+        summary = summariser.create_summary(text, self.model, 2, 1, "tf_idf")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+
+        summary = summariser.create_summary(text, self.model, 2, 1, "pagerank")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+
+        summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
+        self.assertTrue(summary == "")
 
 
 class DatabaseIOUT(unittest.TestCase):

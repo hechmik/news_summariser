@@ -53,7 +53,8 @@ if __name__ == "__main__":
                 summary = summariser.create_summary(text,
                                                     model,
                                                     n=settings['reduction_factor'],
-                                                    min_words_in_sentence=settings['min_words_in_sentence'])
+                                                    min_words_in_sentence=settings['min_words_in_sentence'],
+                                                    algorithm=settings['algorithm'])
             except Exception as e:
                 logging.error("Unable to create summary for {}".format(article_url))
                 logging.error(e)
