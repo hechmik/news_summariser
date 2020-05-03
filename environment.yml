@@ -1,14 +1,16 @@
 name: summariser
 channels:
+  - conda-forge
   - defaults
 dependencies:
-  - bs4
-  - tinydb
-  - feedparser
-  - numpy
-  - scipy
-  - nltk
   - networkx
+  - tinydb
   - requests
+  - nltk
+  - feedparser
+  - scipy
+  - numpy
+  - bs4
+  - scikit-learn
 prefix: /Users/kappa/opt/miniconda3/envs/summariser
 

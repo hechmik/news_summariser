@@ -8,6 +8,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from scipy.spatial.distance import cosine
+from sklearn.feature_extraction.text import TfidfVectorizer
 import networkx as nx
 import logging
 
@@ -40,6 +41,35 @@ def download_dependencies():
     nltk.download('stopwords')
     nltk.download('wordnet')
     logging.info("download_dependencies <<<")
+
+
+def split_text_into_sentences(text):
+    """
+    Given a list of paragraphs or a string of sentences, return a list with one sentence per element
+    :param text:
+    :return:
+    """
+    logging.debug("split_text_into_sentences >>>")
+    if type(text) == str:
+        split_text = nltk.sent_tokenize(text)
+    elif isinstance(text, list):
+        split_text = []
+        for s in text:
+            split_text = split_text + nltk.sent_tokenize(s)
+    logging.debug("split_text_into_sentences <<<")
+    return split_text
+
+
+def filter_sentences_by_length(sentences, min_words_in_sentence):
+    """
+    Return sentences whose length is equal or greater than the required one
+    :param sentences: list of sentences
+    :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
+    :return:
+    """
+    if min_words_in_sentence > 0:
+        sentences = [s for s in sentences if len(s.split()) >= min_words_in_sentence]
+    return sentences
 
 
 def tokenize_sentence(s):
@@ -92,7 +122,7 @@ def get_word_lemma(lemmatiser, w: str):
 
 def preprocess_text(s: str, stopws, lemmatiser):
     """
-    Preprocess the given text by lowercasing, removing special chars, tokenization and removing stop words
+    Preprocess the given text by lowercasing, removing special chars, tokenizing and removing stop words
     :param s: text to preprocess
     :param stopws: list of stop words to remove
     :param lemmatiser lemmatiser instance to use for transforming words
@@ -100,63 +130,61 @@ def preprocess_text(s: str, stopws, lemmatiser):
     """
     logging.debug("preprocess_text >>>")
     s = s.lower()
-    #Remove tabs, trailing spaces etc.
+    # Remove tabs, trailing spaces etc.
     s = " ".join(s.split())
-    s = re.sub('[^A-Za-z0-9 ]+', ' ', s)
     s = tokenize_sentence(s)
+    # Delete words that are not alpha numeric
+    s = [word for word in s if word.isalpha()]
+    # Remove stop words
     s = [word for word in s if word not in stopws]
+    # Apply lemmatisation
     s = [get_word_lemma(lemmatiser, word) for word in s]
+    s = " ".join(s)
     logging.debug("preprocess_text <<<")
     return s
 
 
-def vectorize_sentence(s: str, model, stopws, lemmatiser, empty_vector_size=50):
+def vectorize_sentence(sentence: str, model, empty_vector_size=50):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
-    :param s: string containing sentence
+    :param sentence: string containing a sentence
     :param model: word embedding model
-    :param stopws: stop word list
-    :param lemmatiser: lemmatiser instance to use for transforming words
     :param empty_vector_size: size of the vector of zeros that will replace a word not found in the model
     :return:
     """
     logging.debug("vectorize_sentence >>>")
     v = []
-    for word in preprocess_text(s, stopws, lemmatiser):
+    for word in sentence.split():
         try:
             v.append(model[word])
-        except Exception as e:
+        except Exception:
             logging.warning("Word {} not found in WE model: replacing it with vector of 0s".format(word))
             v.append(np.zeros(empty_vector_size))  # word not in the model
     logging.debug("vectorize_sentence <<<")
     return np.mean(v, axis=0)
 
 
-def compute_sentence_similarity(s1: str, s2: str, model, stopws, lemmatiser):
+def compute_sentence_similarity(s1: str, s2: str, model):
     """
     Return the similarity of two sentences
     :param s1: first sentence
     :param s2: second sentence
     :param model: word embedding model to use for summarising text
-    :param stopws: stopwords list to remove
-    :param lemmatiser: lemmatiser instance to use for transforming words
     :return:
     """
     logging.debug("compute_sentence_similarity >>>")
-    vector_1 = vectorize_sentence(s1, model, stopws, lemmatiser)
-    vector_2 = vectorize_sentence(s2, model, stopws, lemmatiser)
+    vector_1 = vectorize_sentence(s1, model)
+    vector_2 = vectorize_sentence(s2, model)
     sim = cosine(vector_1, vector_2)
     logging.debug("compute_sentence_similarity <<<")
     return sim
 
 
-def build_similarity_matrix(sentences: List[str], model, stopws, lemmatiser):
+def build_similarity_matrix(sentences: List[str], model):
     """
     Compute the similarity matrix related to all input sentences
     :param sentences: list of sentences to compare
     :param model: word embedding model
-    :param stopws: stopwords list to not consider
-    :param lemmatiser: lemmatiser instance to use for transforming words
     :return:
     """
     logging.info("build_similarity_matrix >>>")
@@ -169,17 +197,17 @@ def build_similarity_matrix(sentences: List[str], model, stopws, lemmatiser):
             elif matrix[j, i] != 0:
                 matrix[i, j] = matrix[j, i]
             else:
-                matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model, stopws, lemmatiser)
+                matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model)
     logging.info("build_similarity_matrix <<<")
     return matrix
 
 
-def find_top_n_sentences(matrix, n: int, sentences: List[str], tol=0.01, max_iter=150):
+def pagerank_summarisation(matrix, n: int, original_article: List[str], tol=0.01, max_iter=150):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.
     :param matrix: sentences similarity matrix
     :param n: number of sentences to pick
-    :param sentences: original article
+    :param original_article: original phrases
     :param tol: tolerance parameter for PageRank convergence
     :param max_iter: maximum number of iteration for PageRank convergence
     :return:
@@ -187,51 +215,77 @@ def find_top_n_sentences(matrix, n: int, sentences: List[str], tol=0.01, max_ite
     logging.info("find_top_n_sentences >>>")
     graph = nx.from_numpy_array(matrix)
     scores = nx.pagerank(graph, max_iter=max_iter, tol=tol)
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=True)
-    summary = []
-    for i in range(0, n):
-        summary.append(ranked_sentences[i][1])
+    summary = get_sentences_by_scores(n, scores, original_article, True)
     text = " ".join(summary)
     logging.info("find_top_n_sentences <<<")
     return text
 
 
-def split_text_into_sentences(text):
+def get_sentences_by_scores(n: int, scores, sentences: List[str], maximise_score: bool):
     """
-    Given a list of paragraphs return a list with one sentence per element
-    :param text:
+    Return the sentences which maximise/minimise the given scores preserving their original order
+    :param n: number of sentences to include in the output list
+    :param scores: scores associated with the given sentences
+    :param sentences: List of sentences to evaluate
+    :param maximise_score: whether to choose sentence that maximise or minimise the given scores
     :return:
     """
-    logging.debug("split_text_into_sentences >>>")
-    if type(text) == str:
-        split_text = nltk.sent_tokenize(text)
-    elif isinstance(text, list):
-        split_text = []
-        for s in text:
-            split_text = split_text + nltk.sent_tokenize(s)
-    logging.debug("split_text_into_sentences <<<")
-    return split_text
+    logging.debug("get_sentences_by_scores >>>")
+    # Create a dictionary for storing sentences and their position in the given text
+    sentences_with_index = {}
+    for i in range(0, len(sentences)):
+        sentences_with_index[sentences[i]] = i
+    # Order sentences by their score
+    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=maximise_score)
+
+    # Keep only most meaningful sentences
+    ranked_sentences = ranked_sentences[0:n]
+    # Get the indexes of these meaningful sentences
+    summary_sentences_index = []
+    for i in range(0, n):
+        current_sentence = ranked_sentences[i][1]
+        current_sentence_index = sentences_with_index[current_sentence]
+        summary_sentences_index.append(current_sentence_index)
+    #  Sort indexes in ascending order: in this way we will maintain article coherence
+    summary_sentences_index.sort()
+    summary = [sentences[i] for i in summary_sentences_index]
+    return summary
 
 
-def filter_sentences_by_length(sentences, min_words_in_sentence):
+def tf_idf_summarisation(preprocessed_sentences: List[str], original_article: List[str], n: int):
     """
-    Return sentences whose length is equal or greater than the required one
-    :param sentences: list of sentences
-    :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
+    Create a summary according to tf-idf values in the given text
+    :param preprocessed_sentences: previously pre-processed sentences
+    :param original_article: sentences to evaluate for summarisation in their original form
+    :param n: number of sentences to include for each summary
     :return:
     """
-    if min_words_in_sentence > 0:
-        sentences = [s for s in sentences if len(s.split()) >= min_words_in_sentence]
-    return sentences
+    logging.info("tf_idf_summarisation >>>")
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform(preprocessed_sentences)
+    number_of_sentences = tfidf_matrix.shape[0]
+    scores = []
+    for index in range(0, number_of_sentences):
+        tf_idf_score_curr_sent = tfidf_matrix[index].toarray()
+        # remove zero scores
+        tf_idf_score_curr_sent = tf_idf_score_curr_sent[tf_idf_score_curr_sent > 0]
+        # Compute the average tf-idf value in the given sentence
+        curr_sent_avg_score = np.mean(tf_idf_score_curr_sent)
+        scores.append(curr_sent_avg_score)
+    summary = get_sentences_by_scores(n, scores, original_article, True)
+    summary = " ".join(summary)
+    logging.info("tf_idf_summarisation <<<")
+    return summary
 
 
-def create_summary(text: List[str], model, n: int, min_words_in_sentence: int):
+def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
     :param model: Word Embeddings model
     :param n: how much to reduce the article. The summary length will be: (number of text units)/n
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
+    :param algorithm: Which approach to use for computing the summary
     :return:
     """
     logging.info("load_stop_words >>>")
@@ -240,10 +294,14 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int):
     desired_summary_length = math.ceil(len(sentences) / n)
     stopws = load_stop_words()
     lemmatiser = initialise_lemmatiser()
-    matrix = build_similarity_matrix(sentences, model, stopws, lemmatiser)
-    summary = find_top_n_sentences(matrix, desired_summary_length, sentences)
+    preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
+    if algorithm == "pagerank":
+        matrix = build_similarity_matrix(preprocessed_sentences, model)
+        summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
+    elif algorithm == "tf_idf":
+        summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+    else:
+        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got {}".format(algorithm))
+        summary = ""
     logging.info("load_stop_words <<<")
     return summary
-
-
-
