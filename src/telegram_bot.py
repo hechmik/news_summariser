@@ -66,6 +66,6 @@ if __name__ == "__main__":
     db_dir = settings['db_telegram_path']
     summaries_dir = settings['summaries_dir']
 
-    schedule.every(settings['telegram_scheduling_minutes']).minutes.do(send_summaries)
+    schedule.every(settings['scheduling_minutes']).minutes.do(send_summaries)
     while True:
         schedule.run_pending()
