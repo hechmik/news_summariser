@@ -34,7 +34,7 @@ def get_feeds_articles(news_dict, old_articles: list):
     for website in news_dict.keys():
         website_rss = news_dict[website]['rss']
         articles_infos = get_website_article_link_title(website_rss, website, articles_infos)
-    articles_to_summarise = database_io.get_new_articles(old_articles, articles_infos)
+    articles_to_summarise = database_io.get_delta(old_articles, articles_infos)
     logging.info("get_feeds_articles <<<")
     return articles_to_summarise
 

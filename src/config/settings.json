@@ -1,9 +1,12 @@
 {
-  "db_path": "/news_summariser/articles_db/parsed_articles.json",
+  "db_path": "/news_summariser/db/parsed_articles.json",
+  "db_telegram_path": "/news_summariser/db/sent_messages.json",
+  "summaries_dir": "../output_summaries",
   "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
   "min_words_in_sentence": 0,
   "reduction_factor": 3,
   "algorithm": "tf_idf",
   "telegram_chat_id": "",
-  "telegram_token": ""
+  "telegram_token": "",
+  "scheduling_minutes": 60
 }

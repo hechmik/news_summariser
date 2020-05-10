@@ -4,6 +4,7 @@ import scraper
 import database_io
 import logging
 import json
+import schedule
 from datetime import datetime
 
 
@@ -14,7 +15,7 @@ def store_summaries():
     logging.info("Summaries stored")
 
 
-def create_summary():
+def summarise_current_article():
     summary = ""
     try:
         summary = summariser.create_summary(text,
@@ -30,6 +31,37 @@ def create_summary():
                                         "summary": summary,
                                         "url": article_url}
         summaries.append(current_article_summary_info)
+
+
+def summarise_new_articles():
+    global summaries, model, article, article_url, text
+    # Get the list of articles summarised in the past
+    old_articles = database_io.retrieve_items_from_db(db_path, "articles")
+    articles_infos = feed.get_feeds_articles(website_infos, old_articles)
+    summaries = []
+    # Download, if needed, necessary libraries for text processing
+    summariser.download_dependencies()
+    # Load Word Embedding model
+    model = summariser.load_word_embedding_model()
+    for article in articles_infos:
+        source = article['source']
+        main_div_class = website_infos[source]['main_class']
+        article_url = article['url']
+        logging.debug("source: {}, url: {}".format(source, article_url))
+        text = scraper.scrape_page(article_url,
+                                   main_div_class,
+                                   website_infos[source]['number_of_first_paragraphs_to_ignore'],
+                                   website_infos[source]['number_of_last_paragraphs_to_ignore'])
+
+        if text:
+            summarise_current_article()
+    logging.info("Finished to summarise articles!")
+    # Store summaries and update DB only if there are new summaries
+    if summaries:
+        store_summaries()
+
+        database_io.update_items_in_db(articles_infos, db_path, "articles")
+        logging.info("Articles db updated!")
 
 
 if __name__ == "__main__":
@@ -55,31 +87,6 @@ if __name__ == "__main__":
         settings = json.load(f)
 
     db_path = settings['db_path']
-    # Get the list of articles summarised in the past
-    old_articles = database_io.get_already_summarised_articles(db_path)
-    articles_infos = feed.get_feeds_articles(website_infos, old_articles)
-    summaries = []
-    # Download, if needed, necessary libraries for text processing
-    summariser.download_dependencies()
-    # Load Word Embedding model
-    model = summariser.load_word_embedding_model()
-    for article in articles_infos:
-        source = article['source']
-        main_div_class = website_infos[source]['main_class']
-        article_url = article['url']
-        logging.debug("source: {}, url: {}".format(source, article_url))
-        text = scraper.scrape_page(article_url,
-                                   main_div_class,
-                                   website_infos[source]['number_of_first_paragraphs_to_ignore'],
-                                   website_infos[source]['number_of_last_paragraphs_to_ignore'])
-
-        if text:
-            create_summary()
-
-    logging.info("Finished to summarise articles!")
-    # Store summaries and update DB only if there are new summaries
-    if summaries:
-        store_summaries()
-
-        database_io.update_parsed_articles(articles_infos, db_path)
-        logging.info("Articles db updated!")
+    schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
+    while True:
+        schedule.run_pending()

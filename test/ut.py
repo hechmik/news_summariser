@@ -1,7 +1,7 @@
 import unittest
-import src.scraper as scraper
-import src.summariser as summariser
-import src.database_io as database_io
+import summariser.src.scraper as scraper
+import summariser.src.summariser as summariser
+import commons.database_io as database_io
 import json
 
 
@@ -14,11 +14,11 @@ class ScraperUT(unittest.TestCase):
     wired_div_class = config_websites['Wired UK']['main_class']
     politico_class = config_websites['Politico']['main_class']
     link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian" \
-                               "-revolution.html "
+                               "-revolution.html"
     link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
-                              "-embed-copyright-lawsuit-dismissed.mp4 "
+                              "-embed-copyright-lawsuit-dismissed.mp4"
     link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
-                              "-embed-copyright-lawsuit-dismissed.avi "
+                              "-embed-copyright-lawsuit-dismissed.avi"
 
     def test_is_article_a_multimedia_page(self):
         self.assertFalse(scraper.is_article_a_multimedia_page(self.wired_url))
@@ -158,13 +158,13 @@ class DatabaseIOUT(unittest.TestCase):
 
     def test_get_new_articles(self):
         self.assertEqual(self.diff,
-                         database_io.get_new_articles(self.old_articles, self.new_articles),
+                         database_io.get_delta(self.old_articles, self.new_articles),
                          "Difference in normal scenario")
         self.assertEqual([],
-                         database_io.get_new_articles(self.old_articles, []),
+                         database_io.get_delta(self.old_articles, []),
                          "If there aren't new articles the delta must be empty")
         self.assertEqual(self.new_articles,
-                         database_io.get_new_articles([], self.new_articles),
+                         database_io.get_delta([], self.new_articles),
                          "If there aren't old articles the delta must be equal to the new articles")
 
     def test_insert_data(self):
@@ -172,9 +172,9 @@ class DatabaseIOUT(unittest.TestCase):
         TO DO: instead of creating a local db use a stub
         :return:
         """
-        database_io.update_parsed_articles(self.old_articles, "test.json")
-        database_io.update_parsed_articles(self.old_articles, "test.json")
-        articles_in_db = database_io.get_already_summarised_articles("test.json")
+        database_io.update_items_in_db(self.old_articles, "test.json")
+        database_io.update_items_in_db(self.old_articles, "test.json")
+        articles_in_db = database_io.retrieve_items_from_db("test.json", "articles")
         self.assertEqual(self.old_articles, articles_in_db)
 
 

@@ -2,52 +2,70 @@ import time
 import schedule
 import requests
 import json
-
 from os import listdir
 from os.path import isfile, join
+import sys
+from telegram.utils import helpers
+sys.path.append('../')
+import src.database_io as database_io
 
 
 def telegram_bot_sendtext(bot_message):
-    telegram_endpoint = 'https://api.telegram.org/bot{}/sendMessage?chat_id={}&parse_mode=Markdown&text={}'.format(
-        bot_token,
-        bot_chat_id,
-        bot_message
-    )
-    response = requests.get(telegram_endpoint).json()
-    if not response['ok']:
-        print("something bad happened")
-    else:
-        print("It looks good")
+    """
+    Send the given message to the Telegram Bot
+    :param bot_message: Message that will be sent
+    :return:
+    """
+    payload = {
+        'chat_id': bot_chat_id,
+        'text': helpers.escape_markdown(bot_message, "2"),
+        'parse_mode': 'MarkdownV2'
+    }
+    response = requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=bot_token),
+                             data=payload).json()
+    print(response)
 
 
-def get_articles_list():
-    dir = settings['summaries_dir']
-    fn_articles = [join(dir, f) for f in listdir(dir) if isfile(join(dir, f)) and f.endswith(".json")]
-    return fn_articles
+def get_summaries_fn_list():
+    """
+    Obtain the filenames of summaries that haven't been sent in previous iterations
+    :return:
+    """
+    fn_articles = [{"fn": join(summaries_dir, fn_article)} for fn_article in listdir(summaries_dir) if
+                   isfile(join(summaries_dir, fn_article)) and fn_article.endswith(".json")]
+
+    messages_previously_sent = database_io.retrieve_items_from_db(db_dir, "messages")
+    summaries_to_send = database_io.get_delta(messages_previously_sent, fn_articles)
+    return summaries_to_send
 
 
 def send_summaries():
     print("Sending summaries")
-    fn_articles = get_articles_list()
-    for fn in fn_articles:
+    fn_summaries = get_summaries_fn_list()
+    if not fn_summaries:
+        telegram_bot_sendtext("No summaries to send!")
+    for item in fn_summaries:
+        fn = item['fn']
         with open(fn) as f:
-            current_articles = json.load(f)
-        for article in current_articles:
-            message_template = """*{}*\n{}\nSummary: {}""".format(
-                article['title'],
-                article['url'],
-                article['summary'])
-            telegram_bot_sendtext(message_template)
+            current_summaries = json.load(f)
+        for summary in current_summaries:
+            message = """*{}*\n{}\nSummary:\n{}""".format(
+                summary['title'],
+                summary['url'],
+                summary['summary'])
+            telegram_bot_sendtext(message)
             time.sleep(1)
+    database_io.update_items_in_db(fn_summaries, db_dir, "messages")
 
 
 if __name__ == "__main__":
-
-    schedule.every(10).seconds.do(send_summaries)
-    with open("config/settings.json") as f:
-        settings = json.load(f)
+    with open("config/settings.json") as f_settings:
+        settings = json.load(f_settings)
     bot_token = settings['telegram_token']
     bot_chat_id = settings['telegram_chat_id']
+    db_dir = settings['db_telegram_path']
+    summaries_dir = settings['summaries_dir']
+
+    schedule.every(settings['telegram_scheduling_minutes']).minutes.do(send_summaries)
     while True:
         schedule.run_pending()
-        time.sleep(1)
