@@ -29,7 +29,6 @@ def telegram_bot_sendtext(bot_message):
         logging.error("Unable to send the following message to the bot: {message}".format(message=bot_message))
         logging.error(response)
     logging.debug("telegram_bot_sendtext <<<")
-ß
 
 def get_summaries_fn_list():
     """
