@@ -6,6 +6,32 @@ import logging
 import json
 from datetime import datetime
 
+
+def store_summaries():
+    summary_fn = settings['summaries_fn'].format(str(datetime.now()))
+    with open(summary_fn, 'w') as file:
+        file.write(json.dumps(summaries))
+    logging.info("Summaries stored")
+
+
+def create_summary():
+    summary = ""
+    try:
+        summary = summariser.create_summary(text,
+                                            model,
+                                            n=settings['reduction_factor'],
+                                            min_words_in_sentence=settings['min_words_in_sentence'],
+                                            algorithm=settings['algorithm'])
+    except Exception as e:
+        logging.error("Unable to create summary for {}".format(article_url))
+        logging.error(e)
+    if summary != "":
+        current_article_summary_info = {"title": article['title'],
+                                        "summary": summary,
+                                        "url": article_url}
+        summaries.append(current_article_summary_info)
+
+
 if __name__ == "__main__":
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
@@ -48,29 +74,12 @@ if __name__ == "__main__":
                                    website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
-            summary = ""
-            try:
-                summary = summariser.create_summary(text,
-                                                    model,
-                                                    n=settings['reduction_factor'],
-                                                    min_words_in_sentence=settings['min_words_in_sentence'],
-                                                    algorithm=settings['algorithm'])
-            except Exception as e:
-                logging.error("Unable to create summary for {}".format(article_url))
-                logging.error(e)
-
-            if summary != "":
-                current_article_summary_info = {"title": article['title'],
-                                                "summary": summary,
-                                                "url": article_url}
-                summaries.append(current_article_summary_info)
+            create_summary()
 
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries:
-        summary_fn = settings['summaries_fn'].format(str(datetime.now()))
-        with open(summary_fn, 'w') as file:
-            file.write(json.dumps(summaries))
-        logging.info("Summaries stored")
+        store_summaries()
+
         database_io.update_parsed_articles(articles_infos, db_path)
         logging.info("Articles db updated!")
