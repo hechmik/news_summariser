@@ -7,14 +7,18 @@ import json
 
 class ScraperUT(unittest.TestCase):
     wired_url = "https://www.wired.co.uk/article/big-tech-geopolitics"
-    politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication"
+    politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same" \
+                   "-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication "
     with open("../src/config/websites.json", "r") as f:
         config_websites = json.load(f)
     wired_div_class = config_websites['Wired UK']['main_class']
     politico_class = config_websites['Politico']['main_class']
-    link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian-revolution.html"
-    link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram-embed-copyright-lawsuit-dismissed.mp4"
-    link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram-embed-copyright-lawsuit-dismissed.avi"
+    link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian" \
+                               "-revolution.html "
+    link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
+                              "-embed-copyright-lawsuit-dismissed.mp4 "
+    link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
+                              "-embed-copyright-lawsuit-dismissed.avi "
 
     def test_is_article_a_multimedia_page(self):
         self.assertFalse(scraper.is_article_a_multimedia_page(self.wired_url))
@@ -77,15 +81,15 @@ class SummariserUT(unittest.TestCase):
                          "The lemma of an unknown word is the same word")
 
     def test_preprocess_text(self):
-        input = "Hi! My name is Khaled"
+        input_text = "Hi! My name is Khaled"
         expected_output = "hi name khaled"
 
-        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+        self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Stop words and special characters are removed and text is lowercased")
 
-        input = "@Classes!"
+        input_text = "@Classes!"
         expected_output = "class"
-        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+        self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Special characters are removed and lemmatisation is applied")
 
     def test_split_text_into_sentences(self):
