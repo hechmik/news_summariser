@@ -4,5 +4,6 @@
   "min_words_in_sentence": 0,
   "reduction_factor": 3,
   "algorithm": "tf_idf",
+  "telegram_chat_id": "",
   "telegram_token": ""
 }
