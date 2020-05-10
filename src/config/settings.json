@@ -8,5 +8,5 @@
   "algorithm": "tf_idf",
   "telegram_chat_id": "",
   "telegram_token": "",
-  "scheduling_minutes": 60
+  "scheduling_minutes": 45
 }

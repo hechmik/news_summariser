@@ -39,10 +39,7 @@ def summarise_new_articles():
     old_articles = database_io.retrieve_items_from_db(db_path, "articles")
     articles_infos = feed.get_feeds_articles(website_infos, old_articles)
     summaries = []
-    # Download, if needed, necessary libraries for text processing
-    summariser.download_dependencies()
-    # Load Word Embedding model
-    model = summariser.load_word_embedding_model()
+
     for article in articles_infos:
         source = article['source']
         main_div_class = website_infos[source]['main_class']
@@ -88,5 +85,9 @@ if __name__ == "__main__":
 
     db_path = settings['db_path']
     schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
+    # Download, if needed, necessary libraries for text processing
+    summariser.download_dependencies()
+    # Load Word Embedding model
+    model = summariser.load_word_embedding_model()
     while True:
         schedule.run_pending()
