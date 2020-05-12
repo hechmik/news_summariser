@@ -5,7 +5,7 @@ RUN mkdir /news_summariser
 # Download GloVe model
 RUN wget http://nlp.stanford.edu/data/glove.6B.zip
 # Install unzip
-RUN apt-get install unzip
+RUN apt-get -y --no-install-recommends install unzip
 # Unzip it
 RUN unzip glove.6B.zip -d /news_summariser/glove.6B
 # Remove the original file just for saving ~ 800 MB
