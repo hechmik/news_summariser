@@ -1,7 +1,7 @@
 import unittest
-import summariser.src.scraper as scraper
-import summariser.src.summariser as summariser
-import commons.database_io as database_io
+import src.scraper as scraper
+import src.summariser as summariser
+import src.database_io as database_io
 import json
 
 
@@ -172,8 +172,8 @@ class DatabaseIOUT(unittest.TestCase):
         TO DO: instead of creating a local db use a stub
         :return:
         """
-        database_io.update_items_in_db(self.old_articles, "test.json")
-        database_io.update_items_in_db(self.old_articles, "test.json")
+        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
+        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
         articles_in_db = database_io.retrieve_items_from_db("test.json", "articles")
         self.assertEqual(self.old_articles, articles_in_db)
 
