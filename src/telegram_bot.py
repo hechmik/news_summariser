@@ -4,10 +4,8 @@ import requests
 import json
 from os import listdir
 from os.path import isfile, join
-import sys
 from telegram.utils import helpers
-sys.path.append('../')
-import src.database_io as database_io
+import database_io
 import logging
 
 
@@ -59,7 +57,7 @@ def send_summaries():
         with open(fn) as f:
             current_summaries = json.load(f)
         for summary in current_summaries:
-            message = """*{}*\n{}\nSummary:\n{}""".format(
+            message = """**{}**\n{}\nSummary:\n{}""".format(
                 summary['title'],
                 summary['url'],
                 summary['summary'])
@@ -77,9 +75,6 @@ if __name__ == "__main__":
     db_dir = settings['db_telegram_path']
     summaries_dir = settings['summaries_dir']
 
-    schedule.every(settings['scheduling_minutes']).minutes.do(
-        send_summaries)
-
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                         level=logging.INFO,
@@ -95,5 +90,8 @@ if __name__ == "__main__":
     logging.getLogger("").addHandler(console)
 
     logging.info('Bot started')
+    time.sleep(settings['delay_message'])
+    send_summaries()
+    schedule.every(settings['scheduling_minutes']).minutes.do(send_summaries)
     while True:
         schedule.run_pending()
