@@ -6,6 +6,7 @@ import logging
 import json
 import schedule
 from datetime import datetime
+import telegram_bot
 
 
 def store_summaries(summaries):
@@ -60,6 +61,8 @@ def summarise_new_articles():
 
         database_io.update_items_in_db(articles_infos, db_path, "articles")
         logging.info("Articles db updated!")
+    if settings['send_summaries_via_telegram']:
+        telegram_bot.send_summaries(settings)
 
 
 if __name__ == "__main__":
@@ -92,6 +95,5 @@ if __name__ == "__main__":
     summarise_new_articles()
     # Schedule the run of the summarisation task
     schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
-
     while True:
         schedule.run_pending()

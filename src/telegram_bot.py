@@ -9,9 +9,11 @@ import database_io
 import logging
 
 
-def telegram_bot_sendtext(bot_message):
+def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
     """
     Send the given message to the Telegram Bot
+    :param bot_chat_id: Telegram chat ID
+    :param bot_token: Token of the given bot
     :param bot_message: Message that will be sent
     :return:
     """
@@ -28,7 +30,8 @@ def telegram_bot_sendtext(bot_message):
         logging.error(response)
     logging.debug("telegram_bot_sendtext <<<")
 
-def get_summaries_fn_list():
+
+def get_summaries_fn_list(summaries_dir: str, db_dir: str):
     """
     Obtain the filenames of summaries that haven't been sent in previous iterations
     :return:
@@ -43,55 +46,34 @@ def get_summaries_fn_list():
     return summaries_to_send
 
 
-def send_summaries():
+def send_summaries(settings: dict):
     """
     Retrieve summaries and send them to Telegram Bot if they weren't already sent
+    :param settings: Dictionary where various configurations are stored
     :return:
     """
     logging.info("send_summaries >>>")
-    fn_summaries = get_summaries_fn_list()
-    if not fn_summaries:
-        telegram_bot_sendtext("No summaries to send!")
-    for item in fn_summaries:
-        fn = item['fn']
-        with open(fn) as f:
-            current_summaries = json.load(f)
-        for summary in current_summaries:
-            message = """**{}**\n{}\nSummary:\n{}""".format(
-                summary['title'],
-                summary['url'],
-                summary['summary'])
-            telegram_bot_sendtext(message)
-            time.sleep(1)
-    database_io.update_items_in_db(fn_summaries, db_dir, "messages")
-    logging.info("send_summaries <<<")
-
-
-if __name__ == "__main__":
-    with open("config/settings.json") as f_settings:
-        settings = json.load(f_settings)
     bot_token = settings['telegram_token']
     bot_chat_id = settings['telegram_chat_id']
     db_dir = settings['db_telegram_path']
     summaries_dir = settings['summaries_dir']
+    fn_summaries = get_summaries_fn_list(summaries_dir, db_dir)
+    try:
 
-    logging.root.handlers = []
-    logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.INFO,
-                        filename="/news_summariser/log/telegram_bot.log")
-
-    # set up logging to console
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                                  datefmt="%d-%m-%Y %H:%M:%S")
-    console.setFormatter(formatter)
-    logging.getLogger("").addHandler(console)
-
-    logging.info('Bot started')
-    time.sleep(settings['delay_message'])
-    send_summaries()
-    schedule.every(settings['scheduling_minutes']).minutes.do(send_summaries)
-    while True:
-        schedule.run_pending()
+        if not fn_summaries:
+            telegram_bot_sendtext(bot_chat_id, bot_token, "No summaries to send!")
+        for item in fn_summaries:
+            fn = item['fn']
+            with open(fn) as f:
+                current_summaries = json.load(f)
+            for summary in current_summaries:
+                message = """**{}**\n{}\nSummary:\n{}""".format(
+                    summary['title'],
+                    summary['url'],
+                    summary['summary'])
+                telegram_bot_sendtext(bot_chat_id, bot_token, message)
+                time.sleep(1)
+        database_io.update_items_in_db(fn_summaries, db_dir, "messages")
+    except Exception as ex:
+        logging.error(ex)
+    logging.info("send_summaries <<<")

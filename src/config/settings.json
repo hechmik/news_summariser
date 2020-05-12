@@ -9,5 +9,5 @@
   "telegram_chat_id": "",
   "telegram_token": "",
   "scheduling_minutes": 45,
-  "delay_message": 5
+  "send_summaries_via_telegram": true
 }
