@@ -8,14 +8,14 @@ import schedule
 from datetime import datetime
 
 
-def store_summaries():
+def store_summaries(summaries):
     summary_fn = settings['summaries_fn'].format(str(datetime.now()))
     with open(summary_fn, 'w') as file:
         file.write(json.dumps(summaries))
     logging.info("Summaries stored")
 
 
-def summarise_current_article():
+def summarise_current_article(text, article_url, article):
     summary = ""
     try:
         summary = summariser.create_summary(text,
@@ -30,11 +30,10 @@ def summarise_current_article():
         current_article_summary_info = {"title": article['title'],
                                         "summary": summary,
                                         "url": article_url}
-        summaries.append(current_article_summary_info)
+        return current_article_summary_info
 
 
 def summarise_new_articles():
-    global summaries, model, article, article_url, text
     # Get the list of articles summarised in the past
     old_articles = database_io.retrieve_items_from_db(db_path, "articles")
     articles_infos = feed.get_feeds_articles(website_infos, old_articles)
@@ -51,11 +50,13 @@ def summarise_new_articles():
                                    website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
-            summarise_current_article()
+            summary = summarise_current_article(text, article_url, article)
+            if summary:
+                summaries.append(summary)
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries:
-        store_summaries()
+        store_summaries(summaries)
 
         database_io.update_items_in_db(articles_infos, db_path, "articles")
         logging.info("Articles db updated!")
@@ -82,12 +83,15 @@ if __name__ == "__main__":
         website_infos = json.load(f)
     with open("config/settings.json", "r") as f:
         settings = json.load(f)
-
-    db_path = settings['db_path']
-    schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
     model = summariser.load_word_embedding_model()
+    db_path = settings['db_path']
+    # Execute the whole operation at launch
+    summarise_new_articles()
+    # Schedule the run of the summarisation task
+    schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
+
     while True:
         schedule.run_pending()
