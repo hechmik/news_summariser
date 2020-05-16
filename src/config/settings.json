@@ -4,7 +4,7 @@
   "db_telegram_path": "/news_summariser/db/sent_messages.json",
   "summaries_dir": "../output_summaries",
   "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
-  "min_words_in_sentence": 0,
+  "min_words_in_sentence": 5,
   "reduction_factor": 3,
   "algorithm": "tf_idf",
   "telegram_chat_id": "",
