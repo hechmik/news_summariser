@@ -66,10 +66,15 @@ def summarise_new_articles():
 
 
 if __name__ == "__main__":
+    # Load configuration files
+    with open("config/websites.json", "r") as f:
+        website_infos = json.load(f)
+    with open("config/settings.json", "r") as f:
+        settings = json.load(f)
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                         level=logging.INFO,
-                        filename="/news_summariser/log/news_summariser.log")
+                        filename=settings['log_fn'])
 
     # set up logging to console
     console = logging.StreamHandler()
@@ -81,11 +86,6 @@ if __name__ == "__main__":
     logging.getLogger("").addHandler(console)
 
     logging.info('Application started')
-    # Load configuration files
-    with open("config/websites.json", "r") as f:
-        website_infos = json.load(f)
-    with open("config/settings.json", "r") as f:
-        settings = json.load(f)
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
@@ -93,7 +93,8 @@ if __name__ == "__main__":
     db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()
-    # Schedule the run of the summarisation task
-    schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
-    while True:
-        schedule.run_pending()
+    if settings['execution_mode'] == "always":
+        # Schedule the run of the summarisation task
+        schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
+        while True:
+            schedule.run_pending()

@@ -20,7 +20,7 @@ def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
     logging.debug("telegram_bot_sendtext >>>")
     payload = {
         'chat_id': bot_chat_id,
-        'text': helpers.escape_markdown(bot_message, "2"),
+        'text': bot_message,
         'parse_mode': 'MarkdownV2'
     }
     response = requests.post("https://api.telegram.org/bot{token}/sendMessage".format(token=bot_token),
@@ -53,27 +53,33 @@ def send_summaries(settings: dict):
     :return:
     """
     logging.info("send_summaries >>>")
+    # Extract infos for sending messages to bot
     bot_token = settings['telegram_token']
     bot_chat_id = settings['telegram_chat_id']
     db_dir = settings['db_telegram_path']
     summaries_dir = settings['summaries_dir']
+    # Get summaries that haven't been sent
     fn_summaries = get_summaries_fn_list(summaries_dir, db_dir)
-    try:
-
-        if not fn_summaries:
-            telegram_bot_sendtext(bot_chat_id, bot_token, "No summaries to send!")
-        for item in fn_summaries:
-            fn = item['fn']
-            with open(fn) as f:
-                current_summaries = json.load(f)
-            for summary in current_summaries:
-                message = """**{}**\n{}\nSummary:\n{}""".format(
-                    summary['title'],
-                    summary['url'],
-                    summary['summary'])
-                telegram_bot_sendtext(bot_chat_id, bot_token, message)
-                time.sleep(1)
-        database_io.update_items_in_db(fn_summaries, db_dir, "messages")
-    except Exception as ex:
-        logging.error(ex)
+    # If there aren't new summaries just send a default message
+    if not fn_summaries:
+        telegram_bot_sendtext(bot_chat_id, bot_token, "No summaries to send!")
+    else:
+        try:
+            for item in fn_summaries:
+                fn = item['fn']
+                # Load summaries
+                with open(fn) as f:
+                    current_summaries = json.load(f)
+                for article in current_summaries:
+                    # Build message
+                    message = """*{title}*\n{url}\nSummary:\n{summary}""".format(
+                        title=helpers.escape_markdown(article['title'], "2"),
+                        url=helpers.escape_markdown(article['url'], "2"),
+                        summary=helpers.escape_markdown(article['summary'], "2"))
+                    # Send it to the bot
+                    telegram_bot_sendtext(bot_chat_id, bot_token, message)
+                    time.sleep(1)
+            database_io.update_items_in_db(fn_summaries, db_dir, "messages")
+        except Exception as ex:
+            logging.error(ex)
     logging.info("send_summaries <<<")
