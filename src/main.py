@@ -93,7 +93,7 @@ if __name__ == "__main__":
     db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()
-    if settings['execution_mode'] == "always":
+    if settings['always_on_execution_mode']:
         # Schedule the run of the summarisation task
         schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
         while True:

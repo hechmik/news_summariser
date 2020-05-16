@@ -11,5 +11,5 @@
   "telegram_token": "",
   "scheduling_minutes": 45,
   "send_summaries_via_telegram": true,
-  "execution_mode": "oneshot"
+  "always_on_execution_mode": true
 }
