@@ -64,7 +64,7 @@ def send_summaries(settings: dict):
     summaries_successfully_sent = []
     # If there aren't new summaries just send a default message
     if not fn_summaries:
-        telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown("No summaries to send!"))
+        telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown("No summaries to send!", "2"))
     else:
         for item in fn_summaries:
             try:
