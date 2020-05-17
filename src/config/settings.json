@@ -2,14 +2,14 @@
   "log_fn": "/news_summariser/log/news_summariser.log",
   "db_path": "/news_summariser/db/parsed_articles.json",
   "db_telegram_path": "/news_summariser/db/sent_messages.json",
-  "summaries_dir": "../output_summaries",
-  "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
+  "summaries_dir": "/news_summariser/output_summaries",
+  "summaries_fn": "summary-{}.json",
   "min_words_in_sentence": 5,
   "reduction_factor": 3,
   "algorithm": "tf_idf",
-  "telegram_chat_id": "",
-  "telegram_token": "",
-  "scheduling_minutes": 45,
   "send_summaries_via_telegram": true,
-  "always_on_execution_mode": true
+  "telegram_chat_id": "17224179",
+  "telegram_token": "1187414276:AAEWZc47iWYfcwAHcDNY2v5aRo55jaONBpM",
+  "always_on_execution_mode": true,
+  "scheduling_minutes": 45
 }

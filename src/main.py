@@ -7,10 +7,12 @@ import json
 import schedule
 from datetime import datetime
 import telegram_bot
+import os
 
 
 def store_summaries(summaries):
-    summary_fn = settings['summaries_fn'].format(str(datetime.now()))
+    path = os.path.joinsettings(['summaries_fn'], settings['summaries_fn'])
+    summary_fn = path.format(str(datetime.now()))
     with open(summary_fn, 'w') as file:
         file.write(json.dumps(summaries))
     logging.info("Summaries stored")
