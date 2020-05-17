@@ -84,5 +84,5 @@ def send_summaries(settings: dict):
                 summaries_successfully_sent.append(item)
             except Exception as ex:
                 logging.error(ex)
-
+    database_io.update_items_in_db(summaries_successfully_sent, db_dir, "messages")
     logging.info("send_summaries <<<")
