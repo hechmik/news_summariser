@@ -19,21 +19,20 @@ def store_summaries(summaries):
 
 
 def summarise_current_article(text, article_url, article):
-    summary = ""
     try:
         summary = summariser.create_summary(text,
                                             model,
                                             n=settings['reduction_factor'],
                                             min_words_in_sentence=settings['min_words_in_sentence'],
                                             algorithm=settings['algorithm'])
-    except Exception as e:
-        logging.error("Unable to create summary for {}".format(article_url))
-        logging.error(e)
-    if summary != "":
         current_article_summary_info = {"title": article['title'],
                                         "summary": summary,
                                         "url": article_url}
         return current_article_summary_info
+    except Exception as e:
+        logging.error("Unable to create summary for {}".format(article_url))
+        logging.error(e)
+        return ""
 
 
 def summarise_new_articles():
