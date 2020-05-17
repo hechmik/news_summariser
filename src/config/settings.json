@@ -8,8 +8,8 @@
   "reduction_factor": 3,
   "algorithm": "tf_idf",
   "send_summaries_via_telegram": true,
-  "telegram_chat_id": "17224179",
-  "telegram_token": "1187414276:AAEWZc47iWYfcwAHcDNY2v5aRo55jaONBpM",
+  "telegram_chat_id": "",
+  "telegram_token": "",
   "always_on_execution_mode": true,
   "scheduling_minutes": 45
 }
