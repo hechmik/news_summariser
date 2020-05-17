@@ -60,12 +60,14 @@ def send_summaries(settings: dict):
     summaries_dir = settings['summaries_dir']
     # Get summaries that haven't been sent
     fn_summaries = get_summaries_fn_list(summaries_dir, db_dir)
+    # List where summaries that were successfully sent will be sent
+    summaries_successfully_sent = []
     # If there aren't new summaries just send a default message
     if not fn_summaries:
-        telegram_bot_sendtext(bot_chat_id, bot_token, "No summaries to send!")
+        telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown("No summaries to send!"))
     else:
-        try:
-            for item in fn_summaries:
+        for item in fn_summaries:
+            try:
                 fn = item['fn']
                 # Load summaries
                 with open(fn) as f:
@@ -79,7 +81,8 @@ def send_summaries(settings: dict):
                     # Send it to the bot
                     telegram_bot_sendtext(bot_chat_id, bot_token, message)
                     time.sleep(1)
-            database_io.update_items_in_db(fn_summaries, db_dir, "messages")
-        except Exception as ex:
-            logging.error(ex)
+                summaries_successfully_sent.append(item)
+            except Exception as ex:
+                logging.error(ex)
+
     logging.info("send_summaries <<<")
