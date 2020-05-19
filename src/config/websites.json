@@ -1,6 +1,6 @@
 {
 	"The Guardian-International": {
-		"rss": "https://www.theguardian.com/international/rss",
+		"rss": "https://www.theguardian.com/uk/technology/rss",
 		"main_class": "content__article-body from-content-api js-article__body",
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0

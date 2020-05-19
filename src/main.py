@@ -4,65 +4,43 @@ import scraper
 import database_io
 import logging
 import json
+import schedule
 from datetime import datetime
+import telegram_bot
+import os
 
 
-def store_summaries():
-    summary_fn = settings['summaries_fn'].format(str(datetime.now()))
+def store_summaries(summaries):
+    path = os.path.joinsettings(['summaries_fn'], settings['summaries_fn'])
+    summary_fn = path.format(str(datetime.now()))
     with open(summary_fn, 'w') as file:
         file.write(json.dumps(summaries))
     logging.info("Summaries stored")
 
 
-def create_summary():
-    summary = ""
+def summarise_current_article(text, article_url, article):
     try:
         summary = summariser.create_summary(text,
                                             model,
                                             n=settings['reduction_factor'],
                                             min_words_in_sentence=settings['min_words_in_sentence'],
                                             algorithm=settings['algorithm'])
-    except Exception as e:
-        logging.error("Unable to create summary for {}".format(article_url))
-        logging.error(e)
-    if summary != "":
         current_article_summary_info = {"title": article['title'],
                                         "summary": summary,
                                         "url": article_url}
-        summaries.append(current_article_summary_info)
+        return current_article_summary_info
+    except Exception as e:
+        logging.error("Unable to create summary for {}".format(article_url))
+        logging.error(e)
+        return ""
 
 
-if __name__ == "__main__":
-    logging.root.handlers = []
-    logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.INFO,
-                        filename="/news_summariser/log/news_summariser.log")
-
-    # set up logging to console
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
-    # set a format which is simpler for console use
-    formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                                  datefmt="%d-%m-%Y %H:%M:%S")
-    console.setFormatter(formatter)
-    logging.getLogger("").addHandler(console)
-
-    logging.info('Application started')
-    # Load configuration files
-    with open("config/websites.json", "r") as f:
-        website_infos = json.load(f)
-    with open("config/settings.json", "r") as f:
-        settings = json.load(f)
-
-    db_path = settings['db_path']
+def summarise_new_articles():
     # Get the list of articles summarised in the past
-    old_articles = database_io.get_already_summarised_articles(db_path)
+    old_articles = database_io.retrieve_items_from_db(db_path, "articles")
     articles_infos = feed.get_feeds_articles(website_infos, old_articles)
     summaries = []
-    # Download, if needed, necessary libraries for text processing
-    summariser.download_dependencies()
-    # Load Word Embedding model
-    model = summariser.load_word_embedding_model()
+
     for article in articles_infos:
         source = article['source']
         main_div_class = website_infos[source]['main_class']
@@ -74,12 +52,50 @@ if __name__ == "__main__":
                                    website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
-            create_summary()
-
+            summary = summarise_current_article(text, article_url, article)
+            if summary:
+                summaries.append(summary)
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries:
-        store_summaries()
+        store_summaries(summaries)
 
-        database_io.update_parsed_articles(articles_infos, db_path)
+        database_io.update_items_in_db(articles_infos, db_path, "articles")
         logging.info("Articles db updated!")
+    if settings['send_summaries_via_telegram']:
+        telegram_bot.send_summaries(settings)
+
+
+if __name__ == "__main__":
+    # Load configuration files
+    with open("config/websites.json", "r") as f:
+        website_infos = json.load(f)
+    with open("config/settings.json", "r") as f:
+        settings = json.load(f)
+    logging.root.handlers = []
+    logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
+                        level=logging.INFO,
+                        filename=settings['log_fn'])
+
+    # set up logging to console
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
+                                  datefmt="%d-%m-%Y %H:%M:%S")
+    console.setFormatter(formatter)
+    logging.getLogger("").addHandler(console)
+
+    logging.info('Application started')
+    # Download, if needed, necessary libraries for text processing
+    summariser.download_dependencies()
+    # Load Word Embedding model
+    model = summariser.load_word_embedding_model()
+    db_path = settings['db_path']
+    # Execute the whole operation at launch
+    summarise_new_articles()
+    if settings['always_on_execution_mode']:
+        # Schedule the run of the summarisation task
+        schedule.every(settings['scheduling_minutes']).minutes.do(summarise_new_articles)
+        while True:
+            schedule.run_pending()

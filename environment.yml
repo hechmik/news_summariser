@@ -12,5 +12,7 @@ dependencies:
   - numpy
   - bs4
   - scikit-learn
+  - python-telegram-bot
+  - schedule
 prefix: /Users/kappa/opt/miniconda3/envs/summariser
 

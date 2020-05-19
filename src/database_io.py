@@ -3,51 +3,59 @@ from tinydb import TinyDB, Query
 import logging
 
 
-def get_already_summarised_articles(filename: str):
+def retrieve_items_from_db(filename: str, items_to_retrieve: str):
     """
-    Query the DB for obtaining articles summarised in the past
+    Query the DB for obtaining the specified items
     :param filename: path where TinyDB is stored
+    :param items_to_retrieve: whether to retrieve articles summarised in the past or summaries already sent via telegram
     :return:
     """
-    logging.info("load_already_read_articles >>>")
+    logging.info("retrieve_items_from_db >>>")
     try:
         db = TinyDB(filename)
         q = Query()
-        articles_already_read = db.search(q.title.exists())
+        if items_to_retrieve == "articles":
+            query_result = db.search(q.title.exists())
+        elif items_to_retrieve == "messages":
+            query_result = db.search(q.fn.exists())
         db.close()
     except Exception as ex:
         logging.error(ex)
-        articles_already_read = {}
-    logging.info("load_already_read_articles <<<")
-    return articles_already_read
+        query_result = {}
+    logging.info("retrieve_items_from_db <<<")
+    return query_result
 
 
-def get_new_articles(old_articles, current_articles):
+def get_delta(old_items, current_items):
     """
-    Find, among current articles, the ones that weren't summarised in previous iterations
-    :param old_articles: articles already summarised
-    :param current_articles: articles that were just obtained from RSS feed(s)
+    Find, among current items, the ones that aren't in old items
+    :param old_items: items associated with previous iterations (e.g. articles already summarised, old summaries already sent via Telegram)
+    :param current_items: items associated with the current iteration (e.g. articles just obtained from RSS feed(s), summaries in the target directory)
     :return:
     """
-    logging.info("get_new_articles >>>")
-    if not old_articles:
-        return current_articles
-    articles_not_yet_summarised = [article for article in current_articles if article not in old_articles]
-    logging.info("get_new_articles <<<")
-    return articles_not_yet_summarised
+    logging.info("get_delta >>>")
+    if not old_items:
+        return current_items
+    delta = [item for item in current_items if item not in old_items]
+    logging.info("get_delta <<<")
+    return delta
 
 
-def update_parsed_articles(summarised_articles: List[dict], articles_db_fn: str):
+def update_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:str):
     """
-    Add the summarised articles in the JSON "DB" file
-    :param summarised_articles: articles that were summarised during the last execution
+    Add the given items in the JSON "DB" file
+    :param items: items used in the last execution that should be added to the given db
     :param articles_db_fn: filename where the JSON "DB" is stored
+    :param items_to_store: whether to update articles or messages db
     :return:
     """
-    logging.info("update_parsed_articles >>>")
+    logging.info("update_items_in_db >>>")
     db = TinyDB(articles_db_fn)
     q = Query()
-    for article in summarised_articles:
-        db.upsert(article, q.url == article['url'])
+    for item in items:
+        if items_to_store == "articles":
+            db.upsert(item, q.url == item['url'])
+        elif items_to_store == "messages":
+            db.upsert(item, q.fn == item['fn'])
     db.close()
-    logging.info("update_parsed_articles <<<")
+    logging.info("update_items_in_db <<<")

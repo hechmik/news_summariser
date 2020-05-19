@@ -7,14 +7,18 @@ import json
 
 class ScraperUT(unittest.TestCase):
     wired_url = "https://www.wired.co.uk/article/big-tech-geopolitics"
-    politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication"
+    politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same" \
+                   "-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication "
     with open("../src/config/websites.json", "r") as f:
         config_websites = json.load(f)
     wired_div_class = config_websites['Wired UK']['main_class']
     politico_class = config_websites['Politico']['main_class']
-    link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian-revolution.html"
-    link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram-embed-copyright-lawsuit-dismissed.mp4"
-    link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram-embed-copyright-lawsuit-dismissed.avi"
+    link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian" \
+                               "-revolution.html"
+    link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
+                              "-embed-copyright-lawsuit-dismissed.mp4"
+    link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
+                              "-embed-copyright-lawsuit-dismissed.avi"
 
     def test_is_article_a_multimedia_page(self):
         self.assertFalse(scraper.is_article_a_multimedia_page(self.wired_url))
@@ -77,15 +81,15 @@ class SummariserUT(unittest.TestCase):
                          "The lemma of an unknown word is the same word")
 
     def test_preprocess_text(self):
-        input = "Hi! My name is Khaled"
+        input_text = "Hi! My name is Khaled"
         expected_output = "hi name khaled"
 
-        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+        self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Stop words and special characters are removed and text is lowercased")
 
-        input = "@Classes!"
+        input_text = "@Classes!"
         expected_output = "class"
-        self.assertEqual(expected_output, summariser.preprocess_text(input, self.stopws, self.lemmatiser),
+        self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Special characters are removed and lemmatisation is applied")
 
     def test_split_text_into_sentences(self):
@@ -154,13 +158,13 @@ class DatabaseIOUT(unittest.TestCase):
 
     def test_get_new_articles(self):
         self.assertEqual(self.diff,
-                         database_io.get_new_articles(self.old_articles, self.new_articles),
+                         database_io.get_delta(self.old_articles, self.new_articles),
                          "Difference in normal scenario")
         self.assertEqual([],
-                         database_io.get_new_articles(self.old_articles, []),
+                         database_io.get_delta(self.old_articles, []),
                          "If there aren't new articles the delta must be empty")
         self.assertEqual(self.new_articles,
-                         database_io.get_new_articles([], self.new_articles),
+                         database_io.get_delta([], self.new_articles),
                          "If there aren't old articles the delta must be equal to the new articles")
 
     def test_insert_data(self):
@@ -168,9 +172,9 @@ class DatabaseIOUT(unittest.TestCase):
         TO DO: instead of creating a local db use a stub
         :return:
         """
-        database_io.update_parsed_articles(self.old_articles, "test.json")
-        database_io.update_parsed_articles(self.old_articles, "test.json")
-        articles_in_db = database_io.get_already_summarised_articles("test.json")
+        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
+        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
+        articles_in_db = database_io.retrieve_items_from_db("test.json", "articles")
         self.assertEqual(self.old_articles, articles_in_db)
 
 

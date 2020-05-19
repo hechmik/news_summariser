@@ -1,7 +1,15 @@
 {
-  "db_path": "/news_summariser/articles_db/parsed_articles.json",
-  "summaries_fn": "/news_summariser/output_summaries/output_summaries-{}.json",
-  "min_words_in_sentence": 0,
+  "log_fn": "/news_summariser/log/news_summariser.log",
+  "db_path": "/news_summariser/db/parsed_articles.json",
+  "db_telegram_path": "/news_summariser/db/sent_messages.json",
+  "summaries_dir": "/news_summariser/output_summaries",
+  "summaries_fn": "summary-{}.json",
+  "min_words_in_sentence": 5,
   "reduction_factor": 3,
-  "algorithm": "tf_idf"
+  "algorithm": "tf_idf",
+  "send_summaries_via_telegram": true,
+  "telegram_chat_id": "",
+  "telegram_token": "",
+  "always_on_execution_mode": true,
+  "scheduling_minutes": 45
 }

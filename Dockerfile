@@ -5,7 +5,7 @@ RUN mkdir /news_summariser
 # Download GloVe model
 RUN wget http://nlp.stanford.edu/data/glove.6B.zip
 # Install unzip
-RUN apt-get install unzip
+RUN apt-get -y --no-install-recommends install unzip
 # Unzip it
 RUN unzip glove.6B.zip -d /news_summariser/glove.6B
 # Remove the original file just for saving ~ 800 MB
@@ -21,8 +21,8 @@ ADD src /news_summariser/src
 # Create directories where summaries, logs and parsed articles will be saved
 RUN mkdir /news_summariser/output_summaries /news_summariser/articles_db /news_summariser/log
 # Create volumes for being able to access logs, summaries and DB from the outside and for not losing them
-VOLUME /news_summariser/output_summaries /news_summariser/articles_db /news_summariser/log
+VOLUME /news_summariser/output_summaries /news_summariser/db /news_summariser/log
 # Change workdir
 WORKDIR "/news_summariser/src"
 # Let the music play :)
-ENTRYPOINT ["conda", "run", "-n", "summariser", "python3", "./main.py" ]
+ENTRYPOINT ["conda", "run", "-n", "summariser"]
