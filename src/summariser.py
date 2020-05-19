@@ -300,6 +300,10 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
         summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+    elif algorithm == "bart":
+        from transformers import pipeline
+        summarizer = pipeline("summarization", min_length=50, max_length=100)
+        summarizer(text)
     else:
         logging.error("Invalid algorithm. Expected pagerank or tf_idf, got {}".format(algorithm))
         summary = ""

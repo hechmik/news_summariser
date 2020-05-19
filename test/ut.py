@@ -134,7 +134,9 @@ class SummariserUT(unittest.TestCase):
         text = ["hi, my name is khaled and yours?",
                 "i like watching movies",
                 "my favourite tv show is made by another khaled :) ",
-                "the movie i hate the most is titanic and yours?"]
+                "the movie i hate the most is titanic and yours?",
+                "I really enjoy coding, I find that its a sort of magic activity where you are able to generate new values from scratch.",
+                "Apart from that, wI love spending my spare time reading, watching motorsport and traveling around the world."]
 
         summary = summariser.create_summary(text, self.model, 2, 1, "tf_idf")
         self.assertTrue(len(summary) > 0)
@@ -144,6 +146,10 @@ class SummariserUT(unittest.TestCase):
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
+        summary = summariser.create_summary(text, self.model, 2, 1, "bart")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+        
         summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
         self.assertTrue(summary == "")
 
