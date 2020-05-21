@@ -11,6 +11,7 @@ from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import TfidfVectorizer
 import networkx as nx
 import logging
+from transformers import pipeline
 
 
 def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
@@ -278,7 +279,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str], original_article: Li
     return summary
 
 
-def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str):
+def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str, min_length:int, max_length:int):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
@@ -286,6 +287,8 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
     :param n: how much to reduce the article. The summary length will be: (number of text units)/n
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :param algorithm: Which approach to use for computing the summary
+    :param min_length: minimum number of characters the summary should have for BART and T5-based summaries
+    :param max_length: maximum number of characters the summary should have for BART and T5-based summaries
     :return:
     """
     logging.info("load_stop_words >>>")
@@ -301,11 +304,27 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
     elif algorithm == "bart":
-        from transformers import pipeline
-        summarizer = pipeline("summarization", min_length=50, max_length=100)
-        summarizer(text)
+        summarizer = pipeline("summarization")
+        summary = generate_transformers_summary(text, min_length, max_length, summarizer)
+    elif algorithm == "t5":
+        summarizer = pipeline(task='summarization', model="t5-large")
+        summary = generate_transformers_summary(text, min_length, max_length, summarizer)
     else:
         logging.error("Invalid algorithm. Expected pagerank or tf_idf, got {}".format(algorithm))
         summary = ""
     logging.info("load_stop_words <<<")
+    return summary
+
+
+def generate_transformers_summary(text, min_length, max_length, summarizer):
+    """
+    Given a transformer pipeline (BART or T5), generate a summary whose length is between min_length and max_length
+    :param text: text to summarise
+    :param min_length:
+    :param max_length:
+    :param summarizer:
+    :return:
+    """
+    summary = summarizer("".join(text), min_length=min_length, max_length=max_length)
+    summary = summary[0]['summary_text']
     return summary
