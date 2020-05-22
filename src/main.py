@@ -11,7 +11,7 @@ import os
 
 
 def store_summaries(summaries):
-    path = os.path.joinsettings(['summaries_fn'], settings['summaries_fn'])
+    path = os.path.join(settings['summaries_dir'], settings['summaries_fn'])
     summary_fn = path.format(str(datetime.now()))
     with open(summary_fn, 'w') as file:
         file.write(json.dumps(summaries))
