@@ -14,5 +14,10 @@ dependencies:
   - scikit-learn
   - python-telegram-bot
   - schedule
+  - pytorch
+  - torchvision
+  - pip
+  - pip:
+      - transformers
 prefix: /Users/kappa/opt/miniconda3/envs/summariser
 

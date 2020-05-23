@@ -21,7 +21,7 @@ ADD src /news_summariser/src
 # Create directories where summaries, logs and parsed articles will be saved
 RUN mkdir /news_summariser/output_summaries /news_summariser/articles_db /news_summariser/log
 # Create volumes for being able to access logs, summaries and DB from the outside and for not losing them
-VOLUME /news_summariser/output_summaries /news_summariser/db /news_summariser/log
+VOLUME /news_summariser/output_summaries /news_summariser/db /news_summariser/log /root/.cache/torch/transformers
 # Change workdir
 WORKDIR "/news_summariser/src"
 # Let the music play :)
