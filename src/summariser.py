@@ -32,6 +32,20 @@ def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
     return model
 
 
+def load_t5_model():
+    logging.info("load_t5_model >>>")
+    summarizer = pipeline(task='summarization', model="t5-small")
+    logging.info("load_t5_model <<<")
+    return summarizer
+
+
+def load_bart_model():
+    logging.info("load_bart_model >>>")
+    summarizer = pipeline('summarization')
+    logging.info("load_bart_model <<<")
+    return summarizer
+
+
 def download_dependencies():
     """
     Download resources needed for text preprocessing
@@ -160,9 +174,12 @@ def vectorize_sentence(sentence: str, model, empty_vector_size=50):
             v.append(model[word])
         except Exception:
             logging.warning("Word {} not found in WE model: replacing it with vector of 0s".format(word))
-            v.append(np.zeros(empty_vector_size))  # word not in the model
+            #v.append(np.zeros(empty_vector_size))  # word not in the model
     logging.debug("vectorize_sentence <<<")
-    return np.mean(v, axis=0)
+    if v:
+        return np.zeros(empty_vector_size)
+    else:
+        return np.median(v, axis=0)
 
 
 def compute_sentence_similarity(s1: str, s2: str, model):
@@ -279,7 +296,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str], original_article: Li
     return summary
 
 
-def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str, min_length:int, max_length:int):
+def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
@@ -287,11 +304,9 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
     :param n: how much to reduce the article. The summary length will be: (number of text units)/n
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :param algorithm: Which approach to use for computing the summary
-    :param min_length: minimum number of characters the summary should have for BART and T5-based summaries
-    :param max_length: maximum number of characters the summary should have for BART and T5-based summaries
     :return:
     """
-    logging.info("load_stop_words >>>")
+    logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
     sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     desired_summary_length = math.ceil(len(sentences) / n)
@@ -304,27 +319,30 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
     elif algorithm == "bart":
-        summarizer = pipeline("summarization")
-        summary = generate_transformers_summary(text, min_length, max_length, summarizer)
+        summary = generate_transformers_summary(sentences, model)
     elif algorithm == "t5":
-        summarizer = pipeline(task='summarization', model="t5-large")
-        summary = generate_transformers_summary(text, min_length, max_length, summarizer)
+        summary = generate_transformers_summary(sentences, model)
     else:
         logging.error("Invalid algorithm. Expected pagerank or tf_idf, got {}".format(algorithm))
         summary = ""
-    logging.info("load_stop_words <<<")
+    logging.info("create_summary <<<")
     return summary
 
 
-def generate_transformers_summary(text, min_length, max_length, summarizer):
+def generate_transformers_summary(text, summarizer):
     """
     Given a transformer pipeline (BART or T5), generate a summary whose length is between min_length and max_length
     :param text: text to summarise
-    :param min_length:
-    :param max_length:
-    :param summarizer:
+    :param summarizer: transformers pipeline to use for summarising text
+    :param n: reduction factor. The summary will have a length between len(text)/(n+1) and len(text)/n
     :return:
     """
-    summary = summarizer("".join(text), min_length=min_length, max_length=max_length)
+    logging.info("generate_transformers_summary >>>")
+    # Transform the text back into string
+    text = "".join(text)
+    # Compute the minimum and maximum length of a summary
+
+    summary = summarizer(text, max_length=300, early_stopping=True, num_beams=1)
     summary = summary[0]['summary_text']
+    logging.info("generate_transformers_summary <<<")
     return summary

@@ -63,6 +63,8 @@ class SummariserUT(unittest.TestCase):
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
     model = summariser.load_word_embedding_model("/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    bart_model = summariser.load_bart_model()
+    t5_model = summariser.load_t5_model()
 
     def test_lemmatiser(self):
         w = "queen"
@@ -146,7 +148,11 @@ class SummariserUT(unittest.TestCase):
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.model, 2, 1, "bart")
+        summary = summariser.create_summary(text, self.bart_model, 2, 1, "bart")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+
+        summary = summariser.create_summary(text, self.t5_model, 2, 1, "t5")
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
         
