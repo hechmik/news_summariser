@@ -90,7 +90,15 @@ if __name__ == "__main__":
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
-    model = summariser.load_word_embedding_model()
+    algorithm = settings['algorithm']
+    if algorithm == "pagerank":
+        model = summariser.load_word_embedding_model()
+    elif algorithm == "t5":
+        model = summariser.load_t5_model()
+    elif algorithm == "bart":
+        model = summariser.load_bart_model()
+    else:
+        model = None
     db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()
