@@ -6,7 +6,9 @@ As always feel free to make pull requests or open an issue if you think somethin
 
 The goal of this project is to help me staying updated with the latest news about topics I care while saving some precious time. Also, I think that in this way I will be able to drastically reduce the number of bookmarks in my browser, therefore it is a win-win situation.
 
-At the moment I am focusing in creating an extractive summariser and only the most meaningful phrases in a given article will be returned to the user: even though the summaries may not appear as fluent as the original sources, this choice greatly reduces the problem complexity.
+You can choose between two type of summaries:
+- Extractive summaries: only the most meaningful phrases in a given article are returned to the user, without any modification of the original text. This is comparable to highlighting the main sentences in a text.
+- Abstractive summaries: using more complex models such as BART and T5 it is possible to generate a summary that is based on the original text but rephrase the various sentences. This is comparable to refer to a friend what you have just read, in your own words.
 
 ## High-level pipeline:
 In order to achieve my starting goal this project is structured as follows:
@@ -44,6 +46,8 @@ In [settings.json](src/config/settings.json) the following parameters are specif
 - which algorithm to use for summarising articles (```algorithm```): at the moment you can choose between:
     - ```pagerank```: sentences in a given article are compared to each other in terms of their cosine similarity.Once the similarity matrix is built, PageRank is used for finding the most diverse sentences
     - ```tf_idf```: in this case a tf-idf matrix is built for each article. Sentences with the highest tf-idf average value are included in the summary
+    - ```bart```: summaries are created by reformulating the given article using [BART](https://arxiv.org/abs/1910.13461). If you choose this option please keep in mind that it is data hungry and you may need to increase docker deamon resources to at least 4 GB of RAM
+    - ```t5```: the procedure works as described in the previous point, however in this case [T5](https://arxiv.org/abs/1910.10683) model is used for creating abstractive summaries . T5-based summaries, as BART ones, are computationally intensive. 
 - whether to send the summaries via telegram or not (```send_summaries_via_telegram```), expressed as boolean
 - the chat id of your chat with the bot (```telegram_chat_id```)
 - the token associated with your bot (```telegram_token```)
@@ -84,3 +88,4 @@ In the next weeks I will work on the following points in order to improve the ne
 The course "Text Mining and Search" of my M.Sc. in Data Science at University of Milan-Bicocca, along with other courses and my working experience surely helped me in creating all these software components. I would also like to cite relevant articles from which I took inspiration to build some of the software components:
 - [Text Similarities : Estimate the degree of similarity between two texts](https://medium.com/@adriensieg/text-similarities-da019229c894)
 - [Text summarization in Python](https://towardsdatascience.com/text-summarization-in-python-3f5a25418606?gi=1d335d30c03d)
+- [Huggingface Transformers pretrained models](https://github.com/huggingface/transformers)
