@@ -123,11 +123,17 @@ class SummariserUT(unittest.TestCase):
                 "my favourite tv show is made by another khaled",
                 "the movie i hate the most is titanic and yours?"]
         scores = [100, 50, 110, 1]
-        scored_sentences = summariser.get_sentences_by_scores(n=4, scores=scores, sentences=text, maximise_score=True)
+        scored_sentences = summariser.get_sentences_by_scores(n_sentences=4,
+                                                              scores=scores,
+                                                              sentences=text,
+                                                              maximise_score=True)
         self.assertEqual(text, scored_sentences,
                          "If summary length is equal to the original text length they should be the same")
 
-        scored_sentences = summariser.get_sentences_by_scores(n=2, scores=scores, sentences=text, maximise_score=True)
+        scored_sentences = summariser.get_sentences_by_scores(n_sentences=2,
+                                                              scores=scores,
+                                                              sentences=text,
+                                                              maximise_score=True)
         expected_output = [text[0], text[2]]
         self.assertEqual(expected_output, scored_sentences,
                          "Check if the summary has the first and third sentence")
@@ -158,6 +164,18 @@ class SummariserUT(unittest.TestCase):
         
         summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
         self.assertTrue(summary == "")
+
+    def test_vectorize_sentence(self):
+        sentence = "This is a normal sentence, what do you think?"
+        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        self.assertEqual(50, len(vectorized_sentence))
+
+        sentence = "r1jd dsjsn einwjh"
+        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        self.assertEqual(50, len(vectorized_sentence))
+        import numpy as np
+        self.assertTrue(np.all(np.zeros(50) == vectorized_sentence),
+                        "If no word is in the embedding model, a vector of zeros should be returned")
 
 
 class DatabaseIOUT(unittest.TestCase):
