@@ -39,7 +39,7 @@ def summarise_current_article(text):
     logging.info("summarise_current_article >>>")
     summary = summariser.create_summary(text,
                                         MODEL,
-                                        n=settings['reduction_factor'],
+                                        reduction_factor=settings['reduction_factor'],
                                         min_words_in_sentence=settings['min_words_in_sentence'],
                                         algorithm=settings['algorithm'])
     logging.info("summarise_current_article <<<")
