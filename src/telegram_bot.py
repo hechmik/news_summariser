@@ -18,6 +18,8 @@ def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
     :return:
     """
     logging.debug("telegram_bot_sendtext >>>")
+    message_len = len(bot_message)
+    chat_max_len = 4096
     payload = {
         'chat_id': bot_chat_id,
         'text': bot_message,
@@ -74,13 +76,29 @@ def send_summaries(settings: dict):
                     current_summaries = json.load(f)
                 for article in current_summaries:
                     # Build message
+                    title = helpers.escape_markdown(article['title'], "2")
+                    url = helpers.escape_markdown(article['url'], "2")
+                    summary = helpers.escape_markdown(article['summary'], "2")
                     message = """*{title}*\n{url}\nSummary:\n{summary}""".format(
-                        title=helpers.escape_markdown(article['title'], "2"),
-                        url=helpers.escape_markdown(article['url'], "2"),
-                        summary=helpers.escape_markdown(article['summary'], "2"))
-                    # Send it to the bot
-                    telegram_bot_sendtext(bot_chat_id, bot_token, message)
-                    time.sleep(1)
+                        title=title,
+                        url=url,
+                        summary=summary)
+                    message_len = len(message)
+                    chat_max_len = 4096
+                    # Telegram limits messages to 4096 char: if its longer it is best to split it
+                    if message_len < chat_max_len:
+                        # Send it to the bot
+                        telegram_bot_sendtext(bot_chat_id, bot_token, message)
+                        time.sleep(1)
+                    else:
+                        splits = round(message_len / chat_max_len + 1)
+                        for i in range(splits):
+                            end_index = chat_max_len * (i + 1)
+                            if end_index > chat_max_len:
+                                end_index = chat_max_len
+                            telegram_bot_sendtext(bot_chat_id, bot_token, message[i*4096, end_index])
+                            time.sleep(1)
+
                 summaries_successfully_sent.append(item)
             except Exception as ex:
                 logging.error(ex)
