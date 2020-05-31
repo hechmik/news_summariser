@@ -96,7 +96,7 @@ def send_summaries(settings: dict):
                             end_index = chat_max_len * (i + 1)
                             if end_index > chat_max_len:
                                 end_index = chat_max_len
-                            telegram_bot_sendtext(bot_chat_id, bot_token, message[i*4096, end_index])
+                            telegram_bot_sendtext(bot_chat_id, bot_token, message[i*4096:end_index])
                             time.sleep(1)
 
                 summaries_successfully_sent.append(item)
