@@ -13,6 +13,7 @@ import summariser
 import scraper
 import database_io
 import telegram_bot
+import transformers_summaries
 
 
 def store_summaries(summaries):
@@ -117,10 +118,8 @@ if __name__ == "__main__":
     algorithm = settings['algorithm']
     if algorithm == "pagerank":
         MODEL = summariser.load_word_embedding_model()
-    elif algorithm == "t5":
-        MODEL = summariser.load_t5_model()
-    elif algorithm == "bart":
-        MODEL = summariser.load_bart_model()
+    elif algorithm == "t5" or algorithm == "bart":
+        MODEL = transformers_summaries.load_transformer_model()
     else:
         MODEL = None
     db_path = settings['db_path']

@@ -1,6 +1,7 @@
 import unittest
 import src.scraper as scraper
 import src.summariser as summariser
+import src.transformers_summaries as transformers_summaries
 import src.database_io as database_io
 import json
 
@@ -63,8 +64,8 @@ class SummariserUT(unittest.TestCase):
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
     model = summariser.load_word_embedding_model("/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
-    bart_model = summariser.load_bart_model()
-    t5_model = summariser.load_t5_model()
+    bart_model = transformers_summaries.load_transformer_model("bart")
+    t5_model = transformers_summaries.load_transformer_model("t5")
 
     def test_lemmatiser(self):
         w = "queen"

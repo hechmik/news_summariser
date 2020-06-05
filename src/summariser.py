@@ -13,7 +13,7 @@ from nltk.stem import WordNetLemmatizer
 from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import TfidfVectorizer
 import networkx as nx
-from transformers import pipeline
+from transformers_summaries import generate_transformers_summary
 
 
 def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
@@ -33,29 +33,6 @@ def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
     logging.info("load_word_embedding_model <<<")
     return model
 
-
-def load_t5_model():
-    """
-    Initialize transformers pipeline with T5 small model.
-    If the model is not available in the cache dir it will be downloaded
-    :return:
-    """
-    logging.info("load_t5_model >>>")
-    summarizer = pipeline(task='summarization', model="t5-small")
-    logging.info("load_t5_model <<<")
-    return summarizer
-
-
-def load_bart_model():
-    """
-    Initialize transformers pipeline with BART model.
-    If the model is not available in the cache dir it will be downloaded
-    :return:
-    """
-    logging.info("load_bart_model >>>")
-    summarizer = pipeline('summarization')
-    logging.info("load_bart_model <<<")
-    return summarizer
 
 
 def download_dependencies():
@@ -348,9 +325,7 @@ def create_summary(text: List[str],
         summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
-    elif algorithm == "bart":
-        summary = generate_transformers_summary(sentences, model)
-    elif algorithm == "t5":
+    elif algorithm == "bart" or algorithm == "t5":
         summary = generate_transformers_summary(sentences, model)
     else:
         logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
@@ -358,21 +333,3 @@ def create_summary(text: List[str],
     logging.info("create_summary <<<")
     return summary
 
-
-def generate_transformers_summary(text, summarizer):
-    """
-    Given a transformer pipeline (BART or T5), generate a summary whose length
-    is between min_length and max_length
-    :param text: text to summarise
-    :param summarizer: transformers pipeline to use for summarising text
-    :return:
-    """
-    logging.info("generate_transformers_summary >>>")
-    # Transform the text back into string
-    text = "".join(text)
-    # Compute the minimum and maximum length of a summary
-
-    summary = summarizer(text, max_length=300, early_stopping=True, num_beams=1)
-    summary = summary[0]['summary_text']
-    logging.info("generate_transformers_summary <<<")
-    return summary
