@@ -2,6 +2,11 @@ import logging
 
 
 def load_transformer_model(model_name: str):
+    """
+    Load the appropriate transformer model
+    :param model_name: whether to load BART model or T5 model
+    :return:
+    """
     model = None
     # Load library only if expressly specified: in this way it isn't mandatory to install transformers
     from transformers import pipeline
