@@ -68,24 +68,28 @@ def send_summaries(settings: dict):
     # List where summaries that were successfully sent will be sent
     summaries_successfully_sent = []
     # If there aren't new summaries just send a default message
-    if not fn_summaries:
-        telegram_bot_sendtext(bot_chat_id,
-                              bot_token,
-                              helpers.escape_markdown("No summaries to send!", "2"))
-    else:
-        for item in fn_summaries:
-            try:
+    try:
+        if not fn_summaries:
+
+            telegram_bot_sendtext(bot_chat_id,
+                                  bot_token,
+                                  helpers.escape_markdown("No summaries to send!", "2"))
+        else:
+            for item in fn_summaries:
                 fn = item['fn']
                 # Load summaries
                 with open(fn) as f:
                     current_summaries = json.load(f)
                 for article in current_summaries:
                     send_current_summary_as_message(article, bot_chat_id, bot_token)
-
                 summaries_successfully_sent.append(item)
-            except Exception as ex:
-                logging.error(ex)
-    database_io.update_items_in_db(summaries_successfully_sent, db_dir, "messages")
+        database_io.update_items_in_db(summaries_successfully_sent, db_dir, "messages")
+    except ConnectionError as ce:
+        logging.error("Cant' send the current message: is connection ok?")
+        logging.error(ce)
+    except Exception as ex:
+        logging.error(ex)
+
     logging.info("send_summaries <<<")
 
 
