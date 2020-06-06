@@ -22,5 +22,17 @@
 		"main_class": "story-text has-sidebar",
 		"number_of_first_paragraphs_to_ignore": 5,
 		"number_of_last_paragraphs_to_ignore": 0
+	},
+	"EOS": {
+		"rss": "https://eos.org/feed",
+		"main_class": "content-well",
+		"number_of_first_paragraphs_to_ignore": 0,
+		"number_of_last_paragraphs_to_ignore": 0
+	},
+	"Quant news": {
+		"rss": "https://www.quantnews.com/feed/",
+		"main_class": "clearfix",
+		"number_of_first_paragraphs_to_ignore": 0,
+		"number_of_last_paragraphs_to_ignore": 0
 	}
 }
