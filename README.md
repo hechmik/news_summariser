@@ -24,6 +24,7 @@ In order to achieve my starting goal this project is structured as follows:
 The preferred way to run this project is via Docker. The reason why is that in this way you will keep your environment clean and it is safe to assume that everything will work. In order to do this, assuming you have Docker installed on your machines you will need to execute the following instructions:
 ### 1. (Optional) Create a Telegram Bot and get you chat ID
 If you want to receive the summaries on Telegram you will need to create a bot. In order to do this:
+
 1. Open the Telegram app and look for **@BotFather**
 2. Type ```/start``` in order to start the conversation with this bot
 3. Now let's type ```/newbot``` for creating your own bot
@@ -36,26 +37,36 @@ If you want to receive the summaries on Telegram you will need to create a bot. 
 In the [src/config](src/config) directory you will find two files: [settings.json](src/config/settings.json), associated with the project settings, and [websites.json](src/config/websites.json), where all the RSS feeds are specified.
 #### 2.1 Settings.json 
 In [settings.json](src/config/settings.json) the following parameters are specified:
-- where application logs are stored (```log_fn```)
-- path to the TinyDB instance where already summarised articles are stored (```db_path```)
-- path to the TinyDB instance where already sent summaries are stored (```db_telegram_path```)
-- folder where summaries are stored(```summaries_dir```)
-- complete filename used for storing summaries(```summaries_fn```)
-- the minimum number of words a sentence must have in order to be included in the summary (```min_words_in_sentence```). 
-- the "reduction factor" of the output summaries: with a ```reduction_factor``` of 3 an article having N paragraphs/sentences will be summarised using N/3 paragraphs/sentences
-- which algorithm to use for summarising articles (```algorithm```): at the moment you can choose between:
-    - ```pagerank```: sentences in a given article are compared to each other in terms of their cosine similarity.Once the similarity matrix is built, PageRank is used for finding the most diverse sentences
+
+- ```log_fn```: where application logs are stored
+- ```db_path```: path to the TinyDB instance where already summarised articles are stored
+- ```db_telegram_path```: path to the TinyDB instance where already sent summaries are stored
+- ```summaries_dir```: folder where summaries are stored
+- ```summaries_fn```: complete filename used for storing summaries
+- ```min_words_in_sentence```: the minimum number of words a sentence must have in order to be included in the summary 
+- ```reduction_factor```: how much the original article should be reduced. If set to 3 an article having N sentences will contain N/3 sentences. This is NOT valid for BART and T5, which will have a maximum length of 300 tokens.
+- ```algorithm```: which algorithm to use for summarising articles. At the moment you can choose between:
+    - ```pagerank```: sentences in a given article, after being vectorised using a Word Embedding model, are compared to each other in terms of their cosine similarity. Once the similarity matrix is built, PageRank is used for finding the most diverse sentences
     - ```tf_idf```: in this case a tf-idf matrix is built for each article. Sentences with the highest tf-idf average value are included in the summary
-    - ```bart```: summaries are created by reformulating the given article using [BART](https://arxiv.org/abs/1910.13461). If you choose this option please keep in mind that it is data hungry and you may need to increase docker deamon resources to at least 4 GB of RAM
+    - ```bart```: summaries are created by reformulating the given article using [BART](https://arxiv.org/abs/1910.13461). If you choose this option please keep in mind that it is data hungry and you may need to increase docker daemon resources to at least 4 GB of RAM
     - ```t5```: the procedure works as described in the previous point, however in this case [T5](https://arxiv.org/abs/1910.10683) model is used for creating abstractive summaries . T5-based summaries, as BART ones, are computationally intensive. 
-- whether to send the summaries via telegram or not (```send_summaries_via_telegram```), expressed as boolean
-- the chat id of your chat with the bot (```telegram_chat_id```)
-- the token associated with your bot (```telegram_token```)
-- whether to execute the entire project every X minutes or not (```always_on_execution_mode```) expressed as boolean
-- how frequent (in minutes) the entire project is run (```scheduling_minutes```)
+- ```send_summaries_via_telegram```: whether to send the summaries via telegram or not, expressed as boolean
+- ```telegram_chat_id```: the chat id of your chat with the bot
+- ```telegram_token```: the token associated with your bot ()
+- ```always_on_execution_mode```: whether to execute the entire project every X minutes or not, expressed as boolean
+- ```scheduling_minutes```: how frequent (in minutes) the entire project is run
+
+##### 2.1.2 Which summarisation algorithm should I choose?
+
+As you will probably know it doesn't exist an algorithm, in the Machine Learning field, that is way better than the others in all possible scenarios ([No free lunch theorem](https://en.wikipedia.org/wiki/No_free_lunch_theorem)).
+This is true also in this scenario, however based on literature and my experience developing and testing experience you should choose:
+- **TF-IDF** if you have limited hardware (e.g. Raspberry Pi) and/or you want to summarise a lot of articles and read them as quick as possible.
+- **Pagerank** if you plan to run the tool on a common PC and your are willing to wait a bit more for gaining potentially better summaries. Keep in mind that the quality of the specified Word Embedding is what makes the difference, therefore choose it appropriately.
+- **T5** or **BART** if your main goal is to have articles as coherent as possible without worrying about summarisation time. Please note that sometimes the models behaves erratically because of their abstractive nature.
 
 #### 2.2 Websites.json
 In [websites.json](src/config/websites.json) you can specify one key for each website you intend to summarise, whose keys are:
+
     - ```rss```: the URL of the given RSS feed
     - ```main_class```: the HTML *div class* that contains the article(s)
     - ```number_of_first_paragraphs_to_ignore``` . In websites like Politico the first paragraphs have not relevant information (e.g. datime, author(s) name(s)).
@@ -63,10 +74,10 @@ In [websites.json](src/config/websites.json) you can specify one key for each we
     - ```number_of_last_paragraphs_to_ignore```. In websites like Wired UK the last paragraphs have not relevant information (e.g. social media links, related articles).
         If you specify a given number *n*, the last n paragraph would be ignored.
 
-I have uploaded an example of configuration with some of the websites I usually read.
+I have uploaded an example of configuration with some of the websites I usually read. Feel free to make pull requests just to add the website you care about, I will be more than happy to accept them.
 ### 3. Build & launch the project
 
-In order to run and stop the project we use [Docker Compose](https://docs.docker.com/compose/).
+In order to run and stop the project [Docker Compose](https://docs.docker.com/compose/) is the way to go.
 The first step you will need to do is to build the desired Docker image: in order to do that just launch the `docker-compose build` command.
 When the project is successfully build the following commands will be useful:
 
@@ -85,7 +96,7 @@ In the next weeks I will work on the following points in order to improve the ne
 
 ## Sources
 
-The course "Text Mining and Search" of my M.Sc. in Data Science at University of Milan-Bicocca, along with other courses and my working experience surely helped me in creating all these software components. I would also like to cite relevant articles from which I took inspiration to build some of the software components:
+The course "Text Mining and Search" of my M.Sc. in Data Science at University of Milan-Bicocca, along with other courses and my working experience, surely helped me in creating all these software components. I would also like to cite relevant articles from which I took (large) inspiration in order to build some of the software components:
 - [Text Similarities : Estimate the degree of similarity between two texts](https://medium.com/@adriensieg/text-similarities-da019229c894)
 - [Text summarization in Python](https://towardsdatascience.com/text-summarization-in-python-3f5a25418606?gi=1d335d30c03d)
 - [Huggingface Transformers pretrained models](https://github.com/huggingface/transformers)
