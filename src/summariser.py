@@ -1,16 +1,19 @@
+"""
+In this file all functions needed for creating summaries are present, from loading pretrained
+models to executing the core summarisation task.
+"""
 import math
 from typing import List
-
+import logging
 import numpy as np
 import nltk
-import re
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from scipy.spatial.distance import cosine
 from sklearn.feature_extraction.text import TfidfVectorizer
 import networkx as nx
-import logging
+from transformers_summaries import generate_transformers_summary
 
 
 def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
@@ -29,6 +32,7 @@ def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
             model[word] = vector
     logging.info("load_word_embedding_model <<<")
     return model
+
 
 
 def download_dependencies():
@@ -50,7 +54,7 @@ def split_text_into_sentences(text):
     :return:
     """
     logging.debug("split_text_into_sentences >>>")
-    if type(text) == str:
+    if isinstance(text, str):
         split_text = nltk.sent_tokenize(text)
     elif isinstance(text, list):
         split_text = []
@@ -122,7 +126,11 @@ def get_word_lemma(lemmatiser, w: str):
 
 def preprocess_text(s: str, stopws, lemmatiser):
     """
-    Preprocess the given text by lowercasing, removing special chars, tokenizing and removing stop words
+    Preprocess the given text by:
+    - Lowercasing
+    - Removing special chars
+    - Apply tokenizetion
+    - Removing stop words
     :param s: text to preprocess
     :param stopws: list of stop words to remove
     :param lemmatiser lemmatiser instance to use for transforming words
@@ -144,24 +152,29 @@ def preprocess_text(s: str, stopws, lemmatiser):
     return s
 
 
-def vectorize_sentence(sentence: str, model, empty_vector_size=50):
+def vectorize_sentence(sentence: str, model):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
     :param model: word embedding model
-    :param empty_vector_size: size of the vector of zeros that will replace a word not found in the model
     :return:
     """
     logging.debug("vectorize_sentence >>>")
-    v = []
+    sentence_embeddings = []
+    vector_size = len(model['the'])
     for word in sentence.split():
         try:
-            v.append(model[word])
-        except Exception:
-            logging.warning("Word {} not found in WE model: replacing it with vector of 0s".format(word))
-            v.append(np.zeros(empty_vector_size))  # word not in the model
-    logging.debug("vectorize_sentence <<<")
-    return np.mean(v, axis=0)
+            sentence_embeddings.append(model[word])
+        except KeyError:
+            logging.warning("Word %s not found in WE model", word)
+        except Exception as ex:
+            logging.error(ex)
+    if sentence_embeddings:
+        sentence_vector = np.average(sentence_embeddings, axis=0)
+    else:
+        # Return default value if no word is in the embedding
+        sentence_vector = np.zeros(vector_size)
+    return sentence_vector
 
 
 def compute_sentence_similarity(s1: str, s2: str, model):
@@ -194,7 +207,7 @@ def build_similarity_matrix(sentences: List[str], model):
         for j in range(0, n_sent):
             if i == j:
                 continue
-            elif matrix[j, i] != 0:
+            if matrix[j, i] != 0:
                 matrix[i, j] = matrix[j, i]
             else:
                 matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model)
@@ -202,11 +215,15 @@ def build_similarity_matrix(sentences: List[str], model):
     return matrix
 
 
-def pagerank_summarisation(matrix, n: int, original_article: List[str], tol=0.01, max_iter=150):
+def pagerank_summarisation(matrix,
+                           n_sentences: int,
+                           original_article: List[str],
+                           tol=0.05,
+                           max_iter=150):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.
     :param matrix: sentences similarity matrix
-    :param n: number of sentences to pick
+    :param n_sentences: number of sentences to pick
     :param original_article: original phrases
     :param tol: tolerance parameter for PageRank convergence
     :param max_iter: maximum number of iteration for PageRank convergence
@@ -215,16 +232,16 @@ def pagerank_summarisation(matrix, n: int, original_article: List[str], tol=0.01
     logging.info("find_top_n_sentences >>>")
     graph = nx.from_numpy_array(matrix)
     scores = nx.pagerank(graph, max_iter=max_iter, tol=tol)
-    summary = get_sentences_by_scores(n, scores, original_article, True)
+    summary = get_sentences_by_scores(n_sentences, scores, original_article, True)
     text = " ".join(summary)
     logging.info("find_top_n_sentences <<<")
     return text
 
 
-def get_sentences_by_scores(n: int, scores, sentences: List[str], maximise_score: bool):
+def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool):
     """
     Return the sentences which maximise/minimise the given scores preserving their original order
-    :param n: number of sentences to include in the output list
+    :param n_sentences: number of sentences to include in the output list
     :param scores: scores associated with the given sentences
     :param sentences: List of sentences to evaluate
     :param maximise_score: whether to choose sentence that maximise or minimise the given scores
@@ -233,17 +250,17 @@ def get_sentences_by_scores(n: int, scores, sentences: List[str], maximise_score
     logging.debug("get_sentences_by_scores >>>")
     # Create a dictionary for storing sentences and their position in the given text
     sentences_with_index = {}
-    for i in range(0, len(sentences)):
-        sentences_with_index[sentences[i]] = i
+    for i, sentence in enumerate(sentences):
+        sentences_with_index[sentence] = i
     # Order sentences by their score
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)), reverse=maximise_score)
-
+    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)),
+                              reverse=maximise_score)
     # Keep only most meaningful sentences
-    ranked_sentences = ranked_sentences[0:n]
+    ranked_sentences = ranked_sentences[0:n_sentences]
     # Get the indexes of these meaningful sentences
     summary_sentences_index = []
-    for i in range(0, n):
-        current_sentence = ranked_sentences[i][1]
+    for ranked_sentence in ranked_sentences:
+        current_sentence = ranked_sentence[1]
         current_sentence_index = sentences_with_index[current_sentence]
         summary_sentences_index.append(current_sentence_index)
     #  Sort indexes in ascending order: in this way we will maintain article coherence
@@ -252,12 +269,14 @@ def get_sentences_by_scores(n: int, scores, sentences: List[str], maximise_score
     return summary
 
 
-def tf_idf_summarisation(preprocessed_sentences: List[str], original_article: List[str], n: int):
+def tf_idf_summarisation(preprocessed_sentences: List[str],
+                         original_article: List[str],
+                         n_sentences: int):
     """
     Create a summary according to tf-idf values in the given text
     :param preprocessed_sentences: previously pre-processed sentences
     :param original_article: sentences to evaluate for summarisation in their original form
-    :param n: number of sentences to include for each summary
+    :param n_sentences: number of sentences to include for each summary
     :return:
     """
     logging.info("tf_idf_summarisation >>>")
@@ -272,26 +291,32 @@ def tf_idf_summarisation(preprocessed_sentences: List[str], original_article: Li
         # Compute the average tf-idf value in the given sentence
         curr_sent_avg_score = np.mean(tf_idf_score_curr_sent)
         scores.append(curr_sent_avg_score)
-    summary = get_sentences_by_scores(n, scores, original_article, True)
+    summary = get_sentences_by_scores(n_sentences, scores, original_article, True)
+    # Transform the summary back into a string
     summary = " ".join(summary)
     logging.info("tf_idf_summarisation <<<")
     return summary
 
 
-def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, algorithm: str):
+def create_summary(text: List[str],
+                   model: dict,
+                   reduction_factor: int,
+                   min_words_in_sentence: int,
+                   algorithm: str):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
     :param model: Word Embeddings model
-    :param n: how much to reduce the article. The summary length will be: (number of text units)/n
+    :param reduction_factor: how much to reduce the article's length.
+    The final summary will have N of sentences = n of sentences/reduction_factor
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :param algorithm: Which approach to use for computing the summary
     :return:
     """
-    logging.info("load_stop_words >>>")
+    logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
     sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
-    desired_summary_length = math.ceil(len(sentences) / n)
+    desired_summary_length = math.ceil(len(sentences) / reduction_factor)
     stopws = load_stop_words()
     lemmatiser = initialise_lemmatiser()
     preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
@@ -300,8 +325,11 @@ def create_summary(text: List[str], model, n: int, min_words_in_sentence: int, a
         summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+    elif algorithm == "bart" or algorithm == "t5":
+        summary = generate_transformers_summary(sentences, model)
     else:
-        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got {}".format(algorithm))
+        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
         summary = ""
-    logging.info("load_stop_words <<<")
+    logging.info("create_summary <<<")
     return summary
+

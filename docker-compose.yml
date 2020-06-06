@@ -9,3 +9,4 @@ services:
       - ./output_summaries:/news_summariser/output_summaries
       - ./db:/news_summariser/db
       - ./log:/news_summariser/log
+      - ./transformers:/root/.cache/torch/transformers

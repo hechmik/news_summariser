@@ -1,16 +1,27 @@
+"""
+Main class for running the summariser. Assuming you have correctly installed the needed libraries
+and correctly setup the various config JSON files just type
+python3 main.py for executing the summarisation operations!
+"""
+import logging
+import json
+from datetime import datetime
+import os
+import schedule
 import feed
 import summariser
 import scraper
 import database_io
-import logging
-import json
-import schedule
-from datetime import datetime
 import telegram_bot
-import os
+import transformers_summaries
 
 
 def store_summaries(summaries):
+    """
+    Given a list of summaries, store them in the right path
+    :param summaries:
+    :return:
+    """
     path = os.path.join(settings['summaries_dir'], settings['summaries_fn'])
     summary_fn = path.format(str(datetime.now()))
     with open(summary_fn, 'w') as file:
@@ -18,24 +29,30 @@ def store_summaries(summaries):
     logging.info("Summaries stored")
 
 
-def summarise_current_article(text, article_url, article):
-    try:
-        summary = summariser.create_summary(text,
-                                            model,
-                                            n=settings['reduction_factor'],
-                                            min_words_in_sentence=settings['min_words_in_sentence'],
-                                            algorithm=settings['algorithm'])
-        current_article_summary_info = {"title": article['title'],
-                                        "summary": summary,
-                                        "url": article_url}
-        return current_article_summary_info
-    except Exception as e:
-        logging.error("Unable to create summary for {}".format(article_url))
-        logging.error(e)
-        return ""
+def summarise_current_article(text):
+    """
+    Summarise the given article text
+    :param text:
+    :param article_url:
+    :param article:
+    :return:
+    """
+    logging.info("summarise_current_article >>>")
+    summary = summariser.create_summary(text,
+                                        MODEL,
+                                        reduction_factor=settings['reduction_factor'],
+                                        min_words_in_sentence=settings['min_words_in_sentence'],
+                                        algorithm=settings['algorithm'])
+    logging.info("summarise_current_article <<<")
+    return summary
 
 
 def summarise_new_articles():
+    """
+    Start the summarisation process according the config files
+    :return:
+    """
+    logging.info("summarise_new_articles >>>")
     # Get the list of articles summarised in the past
     old_articles = database_io.retrieve_items_from_db(db_path, "articles")
     articles_infos = feed.get_feeds_articles(website_infos, old_articles)
@@ -45,16 +62,23 @@ def summarise_new_articles():
         source = article['source']
         main_div_class = website_infos[source]['main_class']
         article_url = article['url']
-        logging.debug("source: {}, url: {}".format(source, article_url))
+        logging.debug("source: {source}, url: {url}".format(source=source, url=article_url))
         text = scraper.scrape_page(article_url,
                                    main_div_class,
                                    website_infos[source]['number_of_first_paragraphs_to_ignore'],
                                    website_infos[source]['number_of_last_paragraphs_to_ignore'])
 
         if text:
-            summary = summarise_current_article(text, article_url, article)
-            if summary:
-                summaries.append(summary)
+            try:
+                article_summary = summarise_current_article(text)
+                current_article_summary = {"title": article['title'],
+                                           "summary": article_summary,
+                                           "url": article_url}
+                if current_article_summary:
+                    summaries.append(current_article_summary)
+            except Exception as ex:
+                logging.error("Unable to summarise %url", article_url)
+                logging.error(ex)
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries:
@@ -64,6 +88,7 @@ def summarise_new_articles():
         logging.info("Articles db updated!")
     if settings['send_summaries_via_telegram']:
         telegram_bot.send_summaries(settings)
+    logging.info("summarise_new_articles <<<")
 
 
 if __name__ == "__main__":
@@ -90,7 +115,13 @@ if __name__ == "__main__":
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
-    model = summariser.load_word_embedding_model()
+    algorithm = settings['algorithm']
+    if algorithm == "pagerank":
+        MODEL = summariser.load_word_embedding_model()
+    elif algorithm == "t5" or algorithm == "bart":
+        MODEL = transformers_summaries.load_transformer_model()
+    else:
+        MODEL = None
     db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()

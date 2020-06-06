@@ -1,6 +1,7 @@
 import unittest
 import src.scraper as scraper
 import src.summariser as summariser
+import src.transformers_summaries as transformers_summaries
 import src.database_io as database_io
 import json
 
@@ -63,6 +64,8 @@ class SummariserUT(unittest.TestCase):
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
     model = summariser.load_word_embedding_model("/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    bart_model = transformers_summaries.load_transformer_model("bart")
+    t5_model = transformers_summaries.load_transformer_model("t5")
 
     def test_lemmatiser(self):
         w = "queen"
@@ -121,11 +124,17 @@ class SummariserUT(unittest.TestCase):
                 "my favourite tv show is made by another khaled",
                 "the movie i hate the most is titanic and yours?"]
         scores = [100, 50, 110, 1]
-        scored_sentences = summariser.get_sentences_by_scores(n=4, scores=scores, sentences=text, maximise_score=True)
+        scored_sentences = summariser.get_sentences_by_scores(n_sentences=4,
+                                                              scores=scores,
+                                                              sentences=text,
+                                                              maximise_score=True)
         self.assertEqual(text, scored_sentences,
                          "If summary length is equal to the original text length they should be the same")
 
-        scored_sentences = summariser.get_sentences_by_scores(n=2, scores=scores, sentences=text, maximise_score=True)
+        scored_sentences = summariser.get_sentences_by_scores(n_sentences=2,
+                                                              scores=scores,
+                                                              sentences=text,
+                                                              maximise_score=True)
         expected_output = [text[0], text[2]]
         self.assertEqual(expected_output, scored_sentences,
                          "Check if the summary has the first and third sentence")
@@ -134,7 +143,9 @@ class SummariserUT(unittest.TestCase):
         text = ["hi, my name is khaled and yours?",
                 "i like watching movies",
                 "my favourite tv show is made by another khaled :) ",
-                "the movie i hate the most is titanic and yours?"]
+                "the movie i hate the most is titanic and yours?",
+                "I really enjoy coding, I find that its a sort of magic activity where you are able to generate new values from scratch.",
+                "Apart from that, wI love spending my spare time reading, watching motorsport and traveling around the world."]
 
         summary = summariser.create_summary(text, self.model, 2, 1, "tf_idf")
         self.assertTrue(len(summary) > 0)
@@ -144,8 +155,28 @@ class SummariserUT(unittest.TestCase):
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
+        summary = summariser.create_summary(text, self.bart_model, 2, 1, "bart")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+
+        summary = summariser.create_summary(text, self.t5_model, 2, 1, "t5")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+        
         summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
         self.assertTrue(summary == "")
+
+    def test_vectorize_sentence(self):
+        sentence = "This is a normal sentence, what do you think?"
+        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        self.assertEqual(50, len(vectorized_sentence))
+
+        sentence = "r1jd dsjsn einwjh"
+        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        self.assertEqual(50, len(vectorized_sentence))
+        import numpy as np
+        self.assertTrue(np.all(np.zeros(50) == vectorized_sentence),
+                        "If no word is in the embedding model, a vector of zeros should be returned")
 
 
 class DatabaseIOUT(unittest.TestCase):
