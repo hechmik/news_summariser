@@ -4,6 +4,7 @@ import src.summariser as summariser
 import src.transformers_summaries as transformers_summaries
 import src.database_io as database_io
 import json
+import numpy as np
 
 
 class ScraperUT(unittest.TestCase):
@@ -85,13 +86,13 @@ class SummariserUT(unittest.TestCase):
 
     def test_preprocess_text(self):
         input_text = "Hi! My name is Khaled"
-        expected_output = "hi name khaled"
+        expected_output = ["hi", "name", "khaled"]
 
         self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Stop words and special characters are removed and text is lowercased")
 
         input_text = "@Classes!"
-        expected_output = "class"
+        expected_output = ['class']
         self.assertEqual(expected_output, summariser.preprocess_text(input_text, self.stopws, self.lemmatiser),
                          "Special characters are removed and lemmatisation is applied")
 
@@ -162,21 +163,51 @@ class SummariserUT(unittest.TestCase):
         summary = summariser.create_summary(text, self.t5_model, 2, 1, "t5")
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
-        
+
         summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
         self.assertTrue(summary == "")
 
     def test_vectorize_sentence(self):
         sentence = "This is a normal sentence, what do you think?"
-        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        vectorized_sentence = summariser.vectorize_sentence(sentence.split(), self.model)
         self.assertEqual(50, len(vectorized_sentence))
 
         sentence = "r1jd dsjsn einwjh"
-        vectorized_sentence = summariser.vectorize_sentence(sentence, self.model)
+        vectorized_sentence = summariser.vectorize_sentence(sentence.split(), self.model)
         self.assertEqual(50, len(vectorized_sentence))
-        import numpy as np
         self.assertTrue(np.all(np.zeros(50) == vectorized_sentence),
                         "If no word is in the embedding model, a vector of zeros should be returned")
+
+        s1 = "My name is what is yours?"
+        s2 = "My name is Khaled what is yours?"
+        vect_s1 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="skip")
+        vect_s2 = summariser.vectorize_sentence(s2.split(), self.model, empty_strategy="skip")
+        self.assertTrue(np.array_equal(vect_s1, vect_s2),
+                        "With skip strategy Khaled is not replaced with zeros")
+
+        vect_s1 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="fill")
+        vect_s2 = summariser.vectorize_sentence(s2.split(), self.model, empty_strategy="fill")
+        self.assertFalse(np.array_equal(vect_s1, vect_s2),
+                         "With fill strategy Khaled is replaced with zeros before computing sentence average")
+
+        vect_s2 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="fill")
+        self.assertTrue(np.array_equal(vect_s1, vect_s2),
+                        "With fill strategy only equal sentences have the same vector representation")
+
+    def test_compute_sentence_similarity(self):
+        s1 = summariser.preprocess_text("Hi, my name is khaled and I love coding!",
+                                        self.stopws,
+                                        self.lemmatiser)
+        s2 = summariser.preprocess_text("Hy, my name is khaled and I love coding!",
+                                        self.stopws,
+                                        self.lemmatiser)
+        score_s1_s2 = summariser.compute_sentence_similarity(s1, s2, self.model)
+        s3 = summariser.preprocess_text("This is an unrelated sentence, what do you think?",
+                                        self.stopws,
+                                        self.lemmatiser)
+        score_s2_s3 = summariser.compute_sentence_similarity(s2, s3, self.model)
+        self.assertTrue(score_s1_s2 < score_s2_s3,
+                        "Similar sentences should have a lower score")
 
 
 class DatabaseIOUT(unittest.TestCase):

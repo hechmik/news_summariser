@@ -147,12 +147,11 @@ def preprocess_text(s: str, stopws, lemmatiser):
     s = [word for word in s if word not in stopws]
     # Apply lemmatisation
     s = [get_word_lemma(lemmatiser, word) for word in s]
-    s = " ".join(s)
     logging.debug("preprocess_text <<<")
     return s
 
 
-def vectorize_sentence(sentence: str, model):
+def vectorize_sentence(sentence: List[str], model, empty_strategy="fill"):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
@@ -162,11 +161,13 @@ def vectorize_sentence(sentence: str, model):
     logging.debug("vectorize_sentence >>>")
     sentence_embeddings = []
     vector_size = len(model['the'])
-    for word in sentence.split():
+    for word in sentence:
         try:
             sentence_embeddings.append(model[word])
         except KeyError:
             logging.warning("Word %s not found in WE model", word)
+            if empty_strategy == "fill":
+                sentence_embeddings.append(np.zeros(vector_size))
         except Exception as ex:
             logging.error(ex)
     if sentence_embeddings:
@@ -177,7 +178,7 @@ def vectorize_sentence(sentence: str, model):
     return sentence_vector
 
 
-def compute_sentence_similarity(s1: str, s2: str, model):
+def compute_sentence_similarity(s1: List[str], s2: List[str], model):
     """
     Return the similarity of two sentences
     :param s1: first sentence
@@ -188,9 +189,9 @@ def compute_sentence_similarity(s1: str, s2: str, model):
     logging.debug("compute_sentence_similarity >>>")
     vector_1 = vectorize_sentence(s1, model)
     vector_2 = vectorize_sentence(s2, model)
-    sim = cosine(vector_1, vector_2)
+    score = cosine(vector_1, vector_2)
     logging.debug("compute_sentence_similarity <<<")
-    return sim
+    return score
 
 
 def build_similarity_matrix(sentences: List[str], model):
@@ -205,12 +206,9 @@ def build_similarity_matrix(sentences: List[str], model):
     matrix = np.zeros((n_sent, n_sent))
     for i in range(0, n_sent):
         for j in range(0, n_sent):
-            if i == j:
-                continue
-            if matrix[j, i] != 0:
-                matrix[i, j] = matrix[j, i]
-            else:
+            if i != j:
                 matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model)
+                matrix[j, i] = matrix[j, i]
     logging.info("build_similarity_matrix <<<")
     return matrix
 
@@ -266,6 +264,7 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
     #  Sort indexes in ascending order: in this way we will maintain article coherence
     summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
+    logging.debug("get_sentences_by_scores <<<")
     return summary
 
 
@@ -281,6 +280,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
     """
     logging.info("tf_idf_summarisation >>>")
     vectorizer = TfidfVectorizer()
+    preprocessed_sentences = ["".join(s) for s in preprocessed_sentences]
     tfidf_matrix = vectorizer.fit_transform(preprocessed_sentences)
     number_of_sentences = tfidf_matrix.shape[0]
     scores = []
@@ -332,4 +332,3 @@ def create_summary(text: List[str],
         summary = ""
     logging.info("create_summary <<<")
     return summary
-
