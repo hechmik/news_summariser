@@ -4,12 +4,14 @@
   "db_telegram_path": "/news_summariser/db/sent_messages.json",
   "summaries_dir": "/news_summariser/output_summaries",
   "summaries_fn": "summary-{}.json",
-  "min_words_in_sentence": 5,
-  "reduction_factor": 3,
-  "algorithm": "tf_idf",
-  "send_summaries_via_telegram": true,
+  "min_words_in_sentence": 6,
+  "reduction_factor": 4,
+  "algorithm": "pagerank",
+  "distance_metric": "wmd",
+  "word_embedding_fn": "../glove.6B/glove.6B.50d.txt",
+  "send_summaries_via_telegram": false,
   "telegram_chat_id": "",
   "telegram_token": "",
   "always_on_execution_mode": true,
-  "scheduling_minutes": 45
+  "scheduling_minutes": 120
 }
