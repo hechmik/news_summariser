@@ -16,25 +16,6 @@ import networkx as nx
 from transformers_summaries import generate_transformers_summary
 
 
-def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
-    """
-    Return the Word Embedding model at the given path
-    :param fn: path where the model of interest is stored
-    :return:
-    """
-    logging.info("load_word_embedding_model >>>")
-    model = {}
-    with open(fn, 'r') as f:
-        for line in f:
-            values = line.split()
-            word = values[0]
-            vector = np.asarray(values[1:], "float32")
-            model[word] = vector
-    logging.info("load_word_embedding_model <<<")
-    return model
-
-
-
 def download_dependencies():
     """
     Download resources needed for text preprocessing
@@ -178,18 +159,25 @@ def vectorize_sentence(sentence: List[str], model, empty_strategy="fill"):
     return sentence_vector
 
 
-def compute_sentence_similarity(s1: List[str], s2: List[str], model):
+def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict):
     """
     Return the similarity of two sentences
     :param s1: first sentence
     :param s2: second sentence
-    :param model: word embedding model to use for summarising text
+    :param model_infos: dict where word embedding model and distance metric to use are specified
     :return:
     """
     logging.debug("compute_sentence_similarity >>>")
-    vector_1 = vectorize_sentence(s1, model)
-    vector_2 = vectorize_sentence(s2, model)
-    score = cosine(vector_1, vector_2)
+    distance_metric = model_infos['distance_metric']
+    model_obj = model_infos['model_object']
+    if distance_metric == "cosine":
+        vector_1 = vectorize_sentence(s1, model_obj.model)
+        vector_2 = vectorize_sentence(s2, model_obj.model)
+        score = cosine(vector_1, vector_2)
+    elif distance_metric == "wmd":
+        score = model_obj.wmdistance(s1, s2)
+    else:
+        raise NameError("Invalid distance metric: it should be cosine or wmd")
     logging.debug("compute_sentence_similarity <<<")
     return score
 
@@ -207,7 +195,9 @@ def build_similarity_matrix(sentences: List[str], model):
     for i in range(0, n_sent):
         for j in range(0, n_sent):
             if i != j:
-                matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model)
+                matrix[i, j] = compute_sentence_similarity(sentences[i],
+                                                           sentences[j],
+                                                           model)
                 matrix[j, i] = matrix[j, i]
     logging.info("build_similarity_matrix <<<")
     return matrix

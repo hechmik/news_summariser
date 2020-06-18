@@ -117,7 +117,9 @@ if __name__ == "__main__":
     # Load Word Embedding model
     algorithm = settings['algorithm']
     if algorithm == "pagerank":
-        MODEL = summariser.load_word_embedding_model()
+        import word_embedding
+        we = word_embedding.WordEmbedding(model_fn=settings['word_embedding_fn'])
+        MODEL = {"distance_metric": settings['distance_metric'], "model_object": we}
     elif algorithm == "t5" or algorithm == "bart":
         MODEL = transformers_summaries.load_transformer_model()
     else:
