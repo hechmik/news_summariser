@@ -1,70 +1,19 @@
 import unittest
-import src.scraper as scraper
 import src.summariser as summariser
 import src.transformers_summaries as transformers_summaries
-import src.database_io as database_io
-import json
 import numpy as np
-
-
-class ScraperUT(unittest.TestCase):
-    wired_url = "https://www.wired.co.uk/article/big-tech-geopolitics"
-    politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same" \
-                   "-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication "
-    with open("../src/config/websites.json", "r") as f:
-        config_websites = json.load(f)
-    wired_div_class = config_websites['Wired UK']['main_class']
-    politico_class = config_websites['Politico']['main_class']
-    link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian" \
-                               "-revolution.html"
-    link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
-                              "-embed-copyright-lawsuit-dismissed.mp4"
-    link_with_avi_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
-                              "-embed-copyright-lawsuit-dismissed.avi"
-
-    def test_is_article_a_multimedia_page(self):
-        self.assertFalse(scraper.is_article_a_multimedia_page(self.wired_url))
-        self.assertFalse(scraper.is_article_a_multimedia_page(self.link_with_html_extension))
-        self.assertTrue(scraper.is_article_a_multimedia_page(self.link_with_mp4_extension))
-        self.assertTrue(scraper.is_article_a_multimedia_page(self.link_with_avi_extension))
-
-    def test_download_wired_page(self):
-        page = scraper.scrape_page(self.wired_url, self.wired_div_class, 0, 0)
-        self.assertTrue(len(page) > 0)
-
-    def test_download_page_skipping_paragraphs(self):
-        page = scraper.scrape_page(self.wired_url, self.wired_div_class, 0, 0)
-        n_last_paragraphs_to_skip = 2
-        reduced_page = scraper.scrape_page(self.wired_url, self.wired_div_class, 0, n_last_paragraphs_to_skip)
-        self.assertTrue(len(page) == len(reduced_page) + n_last_paragraphs_to_skip,
-                        "The downloaded page is missing 2 paragraphs")
-        self.assertTrue(page[:-n_last_paragraphs_to_skip] == reduced_page,
-                        "The content is the same, excluding the last 2 paragraphs")
-
-        n_first_paragraphs_to_skip = 3
-        reduced_page = scraper.scrape_page(self.wired_url, self.wired_div_class, n_first_paragraphs_to_skip, 0)
-        self.assertTrue(len(page) == len(reduced_page) + n_first_paragraphs_to_skip,
-                        "The downloaded page is missing 3 paragraphs")
-        self.assertTrue(page[n_first_paragraphs_to_skip:] == reduced_page,
-                        "The content is the same, excluding the first 3 paragraphs")
-
-        reduced_page = scraper.scrape_page(self.wired_url, self.wired_div_class, n_first_paragraphs_to_skip,
-                                           n_last_paragraphs_to_skip)
-        self.assertTrue(len(page) == len(reduced_page) + n_first_paragraphs_to_skip + n_last_paragraphs_to_skip,
-                        "The downloaded page is missing 5 paragraphs")
-        self.assertTrue(page[n_first_paragraphs_to_skip:- n_last_paragraphs_to_skip] == reduced_page,
-                        "The content is the same, excluding the first 3 and last 2 paragraphs")
-
-    def test_download_politico_page(self):
-        page = scraper.scrape_page(self.politico_url, self.politico_class, 5, 0)
-        self.assertTrue(len(page) > 0)
+import sys
+sys.path.insert(1, "../../word_mover_distance")
+import word_embedding
 
 
 class SummariserUT(unittest.TestCase):
     summariser.download_dependencies()
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
-    model = summariser.load_word_embedding_model("/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    we = word_embedding.WordEmbedding(model_fn="/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    cosine_model = {"distance_metric": "cosine", "model_object": we}
+    wmd_model = {"distance_metric": "wmd", "model_object": we}
     bart_model = transformers_summaries.load_transformer_model("bart")
     t5_model = transformers_summaries.load_transformer_model("t5")
 
@@ -146,13 +95,17 @@ class SummariserUT(unittest.TestCase):
                 "my favourite tv show is made by another khaled :) ",
                 "the movie i hate the most is titanic and yours?",
                 "I really enjoy coding, I find that its a sort of magic activity where you are able to generate new values from scratch.",
-                "Apart from that, wI love spending my spare time reading, watching motorsport and traveling around the world."]
+                "Apart from that, I love spending my spare time reading, watching motorsport and traveling around the world."]
 
-        summary = summariser.create_summary(text, self.model, 2, 1, "tf_idf")
+        summary = summariser.create_summary(text, None, 2, 1, "tf_idf")
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.model, 2, 1, "pagerank")
+        summary = summariser.create_summary(text, self.cosine_model, 2, 1, "pagerank")
+        self.assertTrue(len(summary) > 0)
+        self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
+
+        summary = summariser.create_summary(text, self.wmd_model, 2, 1, "pagerank")
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
@@ -164,33 +117,36 @@ class SummariserUT(unittest.TestCase):
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.model, 2, 1, "invalid_method")
+        summary = summariser.create_summary(text, self.cosine_model, 2, 1, "invalid_method")
         self.assertTrue(summary == "")
 
     def test_vectorize_sentence(self):
         sentence = "This is a normal sentence, what do you think?"
-        vectorized_sentence = summariser.vectorize_sentence(sentence.split(), self.model)
+        we_model = self.cosine_model['model_object'].model
+        vectorized_sentence = summariser.vectorize_sentence(sentence.split(),
+                                                            we_model)
         self.assertEqual(50, len(vectorized_sentence))
 
         sentence = "r1jd dsjsn einwjh"
-        vectorized_sentence = summariser.vectorize_sentence(sentence.split(), self.model)
+        vectorized_sentence = summariser.vectorize_sentence(sentence.split(),
+                                                            we_model)
         self.assertEqual(50, len(vectorized_sentence))
         self.assertTrue(np.all(np.zeros(50) == vectorized_sentence),
                         "If no word is in the embedding model, a vector of zeros should be returned")
 
         s1 = "My name is what is yours?"
         s2 = "My name is Khaled what is yours?"
-        vect_s1 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="skip")
-        vect_s2 = summariser.vectorize_sentence(s2.split(), self.model, empty_strategy="skip")
+        vect_s1 = summariser.vectorize_sentence(s1.split(), we_model, empty_strategy="skip")
+        vect_s2 = summariser.vectorize_sentence(s2.split(), we_model, empty_strategy="skip")
         self.assertTrue(np.array_equal(vect_s1, vect_s2),
                         "With skip strategy Khaled is not replaced with zeros")
 
-        vect_s1 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="fill")
-        vect_s2 = summariser.vectorize_sentence(s2.split(), self.model, empty_strategy="fill")
+        vect_s1 = summariser.vectorize_sentence(s1.split(), we_model, empty_strategy="fill")
+        vect_s2 = summariser.vectorize_sentence(s2.split(), we_model, empty_strategy="fill")
         self.assertFalse(np.array_equal(vect_s1, vect_s2),
                          "With fill strategy Khaled is replaced with zeros before computing sentence average")
 
-        vect_s2 = summariser.vectorize_sentence(s1.split(), self.model, empty_strategy="fill")
+        vect_s2 = summariser.vectorize_sentence(s1.split(), we_model, empty_strategy="fill")
         self.assertTrue(np.array_equal(vect_s1, vect_s2),
                         "With fill strategy only equal sentences have the same vector representation")
 
@@ -201,44 +157,23 @@ class SummariserUT(unittest.TestCase):
         s2 = summariser.preprocess_text("Hy, my name is khaled and I love coding!",
                                         self.stopws,
                                         self.lemmatiser)
-        score_s1_s2 = summariser.compute_sentence_similarity(s1, s2, self.model)
         s3 = summariser.preprocess_text("This is an unrelated sentence, what do you think?",
                                         self.stopws,
                                         self.lemmatiser)
-        score_s2_s3 = summariser.compute_sentence_similarity(s2, s3, self.model)
-        self.assertTrue(score_s1_s2 < score_s2_s3,
-                        "Similar sentences should have a lower score")
+
+        score_s1_s2_cos = summariser.compute_sentence_similarity(s1, s2, self.cosine_model)
+        score_s2_s3_cos = summariser.compute_sentence_similarity(s2, s3, self.cosine_model)
+        self.assertTrue(score_s1_s2_cos < score_s2_s3_cos,
+                        "Similar sentences should have a lower \"cosine\" score")
+
+        score_s1_s2_wmd = summariser.compute_sentence_similarity(s1, s2, self.wmd_model)
+        score_s2_s3_wmd = summariser.compute_sentence_similarity(s2, s3, self.wmd_model)
+        self.assertTrue(score_s1_s2_wmd < score_s2_s3_wmd,
+                        "Similar sentences should have a lower \"wmd\" score")
+
+        self.assertTrue(score_s1_s2_wmd != score_s1_s2_cos,
+                        "Changing distance metric lead to different scores")
 
 
-class DatabaseIOUT(unittest.TestCase):
-    old_articles = [{'title': "pippo", 'url': "https://i.com", 'source': "TheGuardian"},
-                    {'title': "abc", 'url': "http://google.xyz", 'source': "Khaled"}]
-    new_articles = [{'title': "pippo", 'url': "https://i.com", 'source': "TheGuardian"},
-                    {'title': "abc", 'url': "http://google.xyz", 'source': "Khaled"},
-                    {'title': "Praise the UT", 'url': "http://truth.abc", 'source': "Master"}]
-    diff = [{'title': "Praise the UT", 'url': "http://truth.abc", 'source': "Master"}]
-
-    def test_get_new_articles(self):
-        self.assertEqual(self.diff,
-                         database_io.get_delta(self.old_articles, self.new_articles),
-                         "Difference in normal scenario")
-        self.assertEqual([],
-                         database_io.get_delta(self.old_articles, []),
-                         "If there aren't new articles the delta must be empty")
-        self.assertEqual(self.new_articles,
-                         database_io.get_delta([], self.new_articles),
-                         "If there aren't old articles the delta must be equal to the new articles")
-
-    def test_insert_data(self):
-        """
-        TO DO: instead of creating a local db use a stub
-        :return:
-        """
-        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
-        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
-        articles_in_db = database_io.retrieve_items_from_db("test.json", "articles")
-        self.assertEqual(self.old_articles, articles_in_db)
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
