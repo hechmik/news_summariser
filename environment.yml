@@ -1,6 +1,7 @@
 name: summariser
 channels:
   - conda-forge
+  - anaconda
   - defaults
 dependencies:
   - networkx
@@ -12,12 +13,13 @@ dependencies:
   - numpy
   - bs4
   - scikit-learn
-  - python-telegram-bot
   - schedule
   - pytorch
   - torchvision
   - pip
   - pip:
       - transformers
+      - python-telegram-bot
+      - word-mover-distance
 prefix: /Users/kappa/opt/miniconda3/envs/summariser
 

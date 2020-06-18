@@ -2,16 +2,14 @@ import unittest
 import src.summariser as summariser
 import src.transformers_summaries as transformers_summaries
 import numpy as np
-import sys
-sys.path.insert(1, "../../word_mover_distance")
-import word_embedding
+import word_mover_distance.model as model
 
 
 class SummariserUT(unittest.TestCase):
     summariser.download_dependencies()
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
-    we = word_embedding.WordEmbedding(model_fn="/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    we = model.WordEmbedding(model_fn="/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
     cosine_model = {"distance_metric": "cosine", "model_object": we}
     wmd_model = {"distance_metric": "wmd", "model_object": we}
     bart_model = transformers_summaries.load_transformer_model("bart")
