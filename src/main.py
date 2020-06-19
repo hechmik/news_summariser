@@ -99,12 +99,12 @@ if __name__ == "__main__":
         settings = json.load(f)
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.INFO,
+                        level=logging.WARN,
                         filename=settings['log_fn'])
 
     # set up logging to console
     console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    console.setLevel(logging.WARN)
     # set a format which is simpler for console use
     formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                                   datefmt="%d-%m-%Y %H:%M:%S")
