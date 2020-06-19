@@ -75,8 +75,7 @@ def load_stop_words():
     :return:
     """
     logging.info("load_stop_words >>>")
-    stopws = stopwords.words("english")
-    stopws = np.array(stopws[:-36])  # for excluding "negation" words
+    stopws = np.array(stopwords.words("english"))
     logging.info("load_stop_words <<<")
     return stopws
 
