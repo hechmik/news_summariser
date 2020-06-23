@@ -77,7 +77,7 @@ def summarise_new_articles():
                 if current_article_summary:
                     summaries.append(current_article_summary)
             except Exception as ex:
-                logging.error("Unable to summarise %url", article_url)
+                logging.error("Unable to summarise %s", article_url)
                 logging.error(ex)
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
