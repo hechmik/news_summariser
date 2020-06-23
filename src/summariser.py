@@ -131,11 +131,12 @@ def preprocess_text(s: str, stopws, lemmatiser):
     return s
 
 
-def vectorize_sentence(sentence: List[str], model, empty_strategy="fill"):
+def vectorize_sentence(sentence: List[str], model, empty_strategy):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
     :param model: word embedding model
+    :param empty_strategy: which strategy to use for handling missing values (default = use a vector of zeros)
     :return:
     """
     logging.debug("vectorize_sentence >>>")
@@ -170,8 +171,9 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
     distance_metric = model_infos['distance_metric']
     model_obj = model_infos['model_object']
     if distance_metric == "cosine":
-        vector_1 = vectorize_sentence(s1, model_obj.model)
-        vector_2 = vectorize_sentence(s2, model_obj.model)
+        empty_strategy = model_infos['empty_strategy']
+        vector_1 = vectorize_sentence(s1, model_obj.model, empty_strategy)
+        vector_2 = vectorize_sentence(s2, model_obj.model, empty_strategy)
         score = cosine(vector_1, vector_2)
     elif distance_metric == "wmd":
         score = model_obj.wmdistance(s1, s2)

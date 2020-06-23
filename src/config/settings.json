@@ -13,5 +13,6 @@
   "telegram_chat_id": "",
   "telegram_token": "",
   "always_on_execution_mode": true,
-  "scheduling_minutes": 120
+  "scheduling_minutes": 120,
+  "empty_strategy": "fill"
 }

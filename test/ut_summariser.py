@@ -10,8 +10,8 @@ class SummariserUT(unittest.TestCase):
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
     we = model.WordEmbedding(model_fn="/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
-    cosine_model = {"distance_metric": "cosine", "model_object": we}
-    wmd_model = {"distance_metric": "wmd", "model_object": we}
+    cosine_model = {"distance_metric": "cosine", "model_object": we, "empty_strategy": "fill"}
+    wmd_model = {"distance_metric": "wmd", "model_object": we, "empty_strategy": "fill"}
     bart_model = transformers_summaries.load_transformer_model("bart")
     t5_model = transformers_summaries.load_transformer_model("t5")
 
@@ -121,13 +121,16 @@ class SummariserUT(unittest.TestCase):
     def test_vectorize_sentence(self):
         sentence = "This is a normal sentence, what do you think?"
         we_model = self.cosine_model['model_object'].model
+        empty_strategy = self.cosine_model['empty_strategy']
         vectorized_sentence = summariser.vectorize_sentence(sentence.split(),
-                                                            we_model)
+                                                            we_model,
+                                                            empty_strategy=empty_strategy)
         self.assertEqual(50, len(vectorized_sentence))
 
         sentence = "r1jd dsjsn einwjh"
         vectorized_sentence = summariser.vectorize_sentence(sentence.split(),
-                                                            we_model)
+                                                            we_model,
+                                                            empty_strategy=empty_strategy)
         self.assertEqual(50, len(vectorized_sentence))
         self.assertTrue(np.all(np.zeros(50) == vectorized_sentence),
                         "If no word is in the embedding model, a vector of zeros should be returned")
@@ -171,6 +174,15 @@ class SummariserUT(unittest.TestCase):
 
         self.assertTrue(score_s1_s2_wmd != score_s1_s2_cos,
                         "Changing distance metric lead to different scores")
+
+    def test_different_empty_strategies(self):
+        s1 = "Hi, my name is khaled1242jd hew932nc and I love coding!".split()
+        s2 = "This is an unrelated sentence, what do you think ?".split()
+        score_s1_s2_cos_fill = summariser.compute_sentence_similarity(s1, s2, self.cosine_model)
+        self.cosine_model['empty_strategy'] = "no_fill"
+        score_s1_s2_cos_no_fill = summariser.compute_sentence_similarity(s1, s2, self.cosine_model)
+        self.assertTrue(score_s1_s2_cos_fill != score_s1_s2_cos_no_fill,
+                        "Using different empty strategies lead to different results")
 
 
 if __name__ == "__main__":
