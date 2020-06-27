@@ -7,10 +7,13 @@ class ScraperUT(unittest.TestCase):
     wired_url = "https://www.wired.co.uk/article/big-tech-geopolitics"
     politico_url = "https://www.politico.eu/article/this-guy-hasnt-changed-one-iota-coronavirus-or-not-its-the-same" \
                    "-old-trump/?utm_source=RSS_Feed&utm_medium=RSS&utm_campaign=RSS_Syndication "
+    hacker_noon_url = "https://hackernoon.com/a-hackers-awakening-all-you-need-to-perfect-the-pomodoro-technique-is-crippling-deadly-nicotine-c8113y06?source=rss"
+
     with open("../src/config/websites.json", "r") as f:
         config_websites = json.load(f)
     wired_div_class = config_websites['Wired UK']['main_class']
-    politico_class = config_websites['Politico']['main_class']
+    politico_div_class = config_websites['Politico']['main_class']
+    hacker_noon_div_class = config_websites['Hacker noon']['main_class']
     link_with_html_extension = "https://www.foreignaffairs.com/articles/middle-east/2020-04-13/next-iranian" \
                                "-revolution.html"
     link_with_mp4_extension = "https://www.theverge.com/2020/4/14/21221078/stephanie-sinclair-mashable-instagram" \
@@ -26,6 +29,10 @@ class ScraperUT(unittest.TestCase):
 
     def test_download_wired_page(self):
         page = scraper.scrape_page(self.wired_url, self.wired_div_class, 0, 0)
+        self.assertTrue(len(page) > 0)
+
+    def test_download_hacker_noon(self):
+        page = scraper.scrape_page(self.hacker_noon_url, self.hacker_noon_div_class, 0, 0)
         self.assertTrue(len(page) > 0)
 
     def test_download_page_skipping_paragraphs(self):
@@ -52,7 +59,7 @@ class ScraperUT(unittest.TestCase):
                         "The content is the same, excluding the first 3 and last 2 paragraphs")
 
     def test_download_politico_page(self):
-        page = scraper.scrape_page(self.politico_url, self.politico_class, 5, 0)
+        page = scraper.scrape_page(self.politico_url, self.politico_div_class, 5, 0)
         self.assertTrue(len(page) > 0)
 
 

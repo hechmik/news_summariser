@@ -42,12 +42,14 @@ def scrape_page(link: str, article_class: str, first_paragraph_index: int, last_
         article_content = soup.find("div", class_=article_class)
         article = []
         paragraphs = article_content.find_all('p')
+        # If there is no paragraph the article text is on several div class
+        if not paragraphs:
+            paragraphs = soup.find_all("div", class_=article_class)
         # Remove, if needed, some of the first and last paragraph(s)
         if first_paragraph_index > 0:
             paragraphs = paragraphs[first_paragraph_index:]
         if last_paragraph_index > 0:
             paragraphs = paragraphs[:-last_paragraph_index]
-
         for paragraph in paragraphs:
             sentence = paragraph.get_text()
             if sentence != "":
