@@ -21,11 +21,11 @@ def download_dependencies():
     Download resources needed for text preprocessing
     :return:
     """
-    logging.info("download_dependencies >>>")
+    logging.debug("download_dependencies >>>")
     nltk.download('punkt')
     nltk.download('stopwords')
     nltk.download('wordnet')
-    logging.info("download_dependencies <<<")
+    logging.debug("download_dependencies <<<")
 
 
 def split_text_into_sentences(text):
@@ -52,8 +52,10 @@ def filter_sentences_by_length(sentences, min_words_in_sentence):
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :return:
     """
+    logging.debug("filter_sentences_by_length >>>")
     if min_words_in_sentence > 0:
         sentences = [s for s in sentences if len(s.split()) >= min_words_in_sentence]
+    logging.debug("filter_sentences_by_length <<<")
     return sentences
 
 
@@ -74,9 +76,9 @@ def load_stop_words():
     Get the stop words list
     :return:
     """
-    logging.info("load_stop_words >>>")
+    logging.debug("load_stop_words >>>")
     stopws = np.array(stopwords.words("english"))
-    logging.info("load_stop_words <<<")
+    logging.debug("load_stop_words <<<")
     return stopws
 
 
@@ -196,10 +198,9 @@ def build_similarity_matrix(sentences: List[str], model):
     for i in range(0, n_sent):
         for j in range(0, n_sent):
             if i != j:
-                matrix[i, j] = compute_sentence_similarity(sentences[i],
-                                                           sentences[j],
-                                                           model)
-                matrix[j, i] = matrix[j, i]
+                matrix[i, j] = matrix[j, i] = compute_sentence_similarity(sentences[i],
+                                                                          sentences[j],
+                                                                          model)
     logging.info("build_similarity_matrix <<<")
     return matrix
 
@@ -236,7 +237,7 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
     :param maximise_score: whether to choose sentence that maximise or minimise the given scores
     :return:
     """
-    logging.debug("get_sentences_by_scores >>>")
+    logging.info("get_sentences_by_scores >>>")
     # Create a dictionary for storing sentences and their position in the given text
     sentences_with_index = {}
     for i, sentence in enumerate(sentences):
@@ -252,10 +253,10 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
         current_sentence = ranked_sentence[1]
         current_sentence_index = sentences_with_index[current_sentence]
         summary_sentences_index.append(current_sentence_index)
-    #  Sort indexes in ascending order: in this way we will maintain article coherence
+    # Sort indexes in ascending order: in this way we will maintain article coherence
     summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
-    logging.debug("get_sentences_by_scores <<<")
+    logging.info("get_sentences_by_scores <<<")
     return summary
 
 
@@ -306,8 +307,8 @@ def create_summary(text: List[str],
     """
     logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
-    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     desired_summary_length = math.ceil(len(sentences) / reduction_factor)
+    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     stopws = load_stop_words()
     lemmatiser = initialise_lemmatiser()
     preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
