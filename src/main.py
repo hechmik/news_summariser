@@ -83,7 +83,6 @@ def summarise_new_articles():
     # Store summaries and update DB only if there are new summaries
     if summaries:
         store_summaries(summaries)
-
         database_io.update_items_in_db(articles_infos, db_path, "articles")
         logging.info("Articles db updated!")
     if settings['send_summaries_via_telegram']:
