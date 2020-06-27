@@ -309,18 +309,22 @@ def create_summary(text: List[str],
     sentences = split_text_into_sentences(text)
     desired_summary_length = math.ceil(len(sentences) / reduction_factor)
     sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
-    stopws = load_stop_words()
-    lemmatiser = initialise_lemmatiser()
-    preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
-    if algorithm == "pagerank":
-        matrix = build_similarity_matrix(preprocessed_sentences, model)
-        summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
-    elif algorithm == "tf_idf":
-        summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
-    elif algorithm == "bart" or algorithm == "t5":
-        summary = generate_transformers_summary(sentences, model)
+    if desired_summary_length >= len(sentences):
+        logging.warning("Reduction factor too high, returning whole article without short sentences")
+        summary = " ".join(sentences)
     else:
-        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
-        summary = ""
+        stopws = load_stop_words()
+        lemmatiser = initialise_lemmatiser()
+        preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
+        if algorithm == "pagerank":
+            matrix = build_similarity_matrix(preprocessed_sentences, model)
+            summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
+        elif algorithm == "tf_idf":
+            summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+        elif algorithm == "bart" or algorithm == "t5":
+            summary = generate_transformers_summary(sentences, model)
+        else:
+            logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
+            summary = ""
     logging.info("create_summary <<<")
     return summary
