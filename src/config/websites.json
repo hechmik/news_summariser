@@ -29,9 +29,15 @@
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	},
-	"Quant news": {
-		"rss": "https://www.quantnews.com/feed/",
-		"main_class": "clearfix",
+	"Financial hacker": {
+		"rss": "https://financial-hacker.com/feed/",
+		"main_class": "entry-content",
+		"number_of_first_paragraphs_to_ignore": 1,
+		"number_of_last_paragraphs_to_ignore": 0
+	},
+	"Hacker noon": {
+		"rss": "https://hackernoon.com/feed",
+		"main_class": "paragraph",
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	}

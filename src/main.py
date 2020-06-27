@@ -77,13 +77,12 @@ def summarise_new_articles():
                 if current_article_summary:
                     summaries.append(current_article_summary)
             except Exception as ex:
-                logging.error("Unable to summarise %url", article_url)
+                logging.error("Unable to summarise %s", article_url)
                 logging.error(ex)
     logging.info("Finished to summarise articles!")
     # Store summaries and update DB only if there are new summaries
     if summaries:
         store_summaries(summaries)
-
         database_io.update_items_in_db(articles_infos, db_path, "articles")
         logging.info("Articles db updated!")
     if settings['send_summaries_via_telegram']:
@@ -99,12 +98,12 @@ if __name__ == "__main__":
         settings = json.load(f)
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.INFO,
+                        level=logging.WARN,
                         filename=settings['log_fn'])
 
     # set up logging to console
     console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    console.setLevel(logging.WARN)
     # set a format which is simpler for console use
     formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                                   datefmt="%d-%m-%Y %H:%M:%S")
@@ -117,7 +116,11 @@ if __name__ == "__main__":
     # Load Word Embedding model
     algorithm = settings['algorithm']
     if algorithm == "pagerank":
-        MODEL = summariser.load_word_embedding_model()
+        import word_mover_distance.model as model
+        we = model.WordEmbedding(model_fn=settings['word_embedding_fn'])
+        MODEL = {"distance_metric": settings['distance_metric'],
+                 "model_object": we,
+                 "empty_strategy": settings['empty_strategy']}
     elif algorithm == "t5" or algorithm == "bart":
         MODEL = transformers_summaries.load_transformer_model()
     else:

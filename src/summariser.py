@@ -16,35 +16,16 @@ import networkx as nx
 from transformers_summaries import generate_transformers_summary
 
 
-def load_word_embedding_model(fn="../glove.6B/glove.6B.50d.txt"):
-    """
-    Return the Word Embedding model at the given path
-    :param fn: path where the model of interest is stored
-    :return:
-    """
-    logging.info("load_word_embedding_model >>>")
-    model = {}
-    with open(fn, 'r') as f:
-        for line in f:
-            values = line.split()
-            word = values[0]
-            vector = np.asarray(values[1:], "float32")
-            model[word] = vector
-    logging.info("load_word_embedding_model <<<")
-    return model
-
-
-
 def download_dependencies():
     """
     Download resources needed for text preprocessing
     :return:
     """
-    logging.info("download_dependencies >>>")
+    logging.debug("download_dependencies >>>")
     nltk.download('punkt')
     nltk.download('stopwords')
     nltk.download('wordnet')
-    logging.info("download_dependencies <<<")
+    logging.debug("download_dependencies <<<")
 
 
 def split_text_into_sentences(text):
@@ -71,8 +52,10 @@ def filter_sentences_by_length(sentences, min_words_in_sentence):
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :return:
     """
+    logging.debug("filter_sentences_by_length >>>")
     if min_words_in_sentence > 0:
         sentences = [s for s in sentences if len(s.split()) >= min_words_in_sentence]
+    logging.debug("filter_sentences_by_length <<<")
     return sentences
 
 
@@ -93,10 +76,9 @@ def load_stop_words():
     Get the stop words list
     :return:
     """
-    logging.info("load_stop_words >>>")
-    stopws = stopwords.words("english")
-    stopws = np.array(stopws[:-36])  # for excluding "negation" words
-    logging.info("load_stop_words <<<")
+    logging.debug("load_stop_words >>>")
+    stopws = np.array(stopwords.words("english"))
+    logging.debug("load_stop_words <<<")
     return stopws
 
 
@@ -147,26 +129,28 @@ def preprocess_text(s: str, stopws, lemmatiser):
     s = [word for word in s if word not in stopws]
     # Apply lemmatisation
     s = [get_word_lemma(lemmatiser, word) for word in s]
-    s = " ".join(s)
     logging.debug("preprocess_text <<<")
     return s
 
 
-def vectorize_sentence(sentence: str, model):
+def vectorize_sentence(sentence: List[str], model, empty_strategy):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
     :param model: word embedding model
+    :param empty_strategy: which strategy to use for handling missing values (default = use a vector of zeros)
     :return:
     """
     logging.debug("vectorize_sentence >>>")
     sentence_embeddings = []
     vector_size = len(model['the'])
-    for word in sentence.split():
+    for word in sentence:
         try:
             sentence_embeddings.append(model[word])
         except KeyError:
             logging.warning("Word %s not found in WE model", word)
+            if empty_strategy == "fill":
+                sentence_embeddings.append(np.zeros(vector_size))
         except Exception as ex:
             logging.error(ex)
     if sentence_embeddings:
@@ -177,20 +161,28 @@ def vectorize_sentence(sentence: str, model):
     return sentence_vector
 
 
-def compute_sentence_similarity(s1: str, s2: str, model):
+def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict):
     """
     Return the similarity of two sentences
     :param s1: first sentence
     :param s2: second sentence
-    :param model: word embedding model to use for summarising text
+    :param model_infos: dict where word embedding model and distance metric to use are specified
     :return:
     """
     logging.debug("compute_sentence_similarity >>>")
-    vector_1 = vectorize_sentence(s1, model)
-    vector_2 = vectorize_sentence(s2, model)
-    sim = cosine(vector_1, vector_2)
+    distance_metric = model_infos['distance_metric']
+    model_obj = model_infos['model_object']
+    if distance_metric == "cosine":
+        empty_strategy = model_infos['empty_strategy']
+        vector_1 = vectorize_sentence(s1, model_obj.model, empty_strategy)
+        vector_2 = vectorize_sentence(s2, model_obj.model, empty_strategy)
+        score = cosine(vector_1, vector_2)
+    elif distance_metric == "wmd":
+        score = model_obj.wmdistance(s1, s2)
+    else:
+        raise NameError("Invalid distance metric: it should be cosine or wmd")
     logging.debug("compute_sentence_similarity <<<")
-    return sim
+    return score
 
 
 def build_similarity_matrix(sentences: List[str], model):
@@ -205,12 +197,10 @@ def build_similarity_matrix(sentences: List[str], model):
     matrix = np.zeros((n_sent, n_sent))
     for i in range(0, n_sent):
         for j in range(0, n_sent):
-            if i == j:
-                continue
-            if matrix[j, i] != 0:
-                matrix[i, j] = matrix[j, i]
-            else:
-                matrix[i, j] = compute_sentence_similarity(sentences[i], sentences[j], model)
+            if i != j:
+                matrix[i, j] = matrix[j, i] = compute_sentence_similarity(sentences[i],
+                                                                          sentences[j],
+                                                                          model)
     logging.info("build_similarity_matrix <<<")
     return matrix
 
@@ -247,7 +237,7 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
     :param maximise_score: whether to choose sentence that maximise or minimise the given scores
     :return:
     """
-    logging.debug("get_sentences_by_scores >>>")
+    logging.info("get_sentences_by_scores >>>")
     # Create a dictionary for storing sentences and their position in the given text
     sentences_with_index = {}
     for i, sentence in enumerate(sentences):
@@ -263,9 +253,10 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
         current_sentence = ranked_sentence[1]
         current_sentence_index = sentences_with_index[current_sentence]
         summary_sentences_index.append(current_sentence_index)
-    #  Sort indexes in ascending order: in this way we will maintain article coherence
+    # Sort indexes in ascending order: in this way we will maintain article coherence
     summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
+    logging.info("get_sentences_by_scores <<<")
     return summary
 
 
@@ -281,6 +272,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
     """
     logging.info("tf_idf_summarisation >>>")
     vectorizer = TfidfVectorizer()
+    preprocessed_sentences = ["".join(s) for s in preprocessed_sentences]
     tfidf_matrix = vectorizer.fit_transform(preprocessed_sentences)
     number_of_sentences = tfidf_matrix.shape[0]
     scores = []
@@ -315,21 +307,24 @@ def create_summary(text: List[str],
     """
     logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
-    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     desired_summary_length = math.ceil(len(sentences) / reduction_factor)
-    stopws = load_stop_words()
-    lemmatiser = initialise_lemmatiser()
-    preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
-    if algorithm == "pagerank":
-        matrix = build_similarity_matrix(preprocessed_sentences, model)
-        summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
-    elif algorithm == "tf_idf":
-        summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
-    elif algorithm == "bart" or algorithm == "t5":
-        summary = generate_transformers_summary(sentences, model)
+    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
+    if desired_summary_length >= len(sentences):
+        logging.warning("Reduction factor too high, returning whole article without short sentences")
+        summary = " ".join(sentences)
     else:
-        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
-        summary = ""
+        stopws = load_stop_words()
+        lemmatiser = initialise_lemmatiser()
+        preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
+        if algorithm == "pagerank":
+            matrix = build_similarity_matrix(preprocessed_sentences, model)
+            summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
+        elif algorithm == "tf_idf":
+            summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+        elif algorithm == "bart" or algorithm == "t5":
+            summary = generate_transformers_summary(sentences, model)
+        else:
+            logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
+            summary = ""
     logging.info("create_summary <<<")
     return summary
-
