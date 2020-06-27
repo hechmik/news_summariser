@@ -69,13 +69,12 @@ This is true also in this scenario, however based on literature and my experienc
 
 #### 2.2 Websites.json
 In [websites.json](src/config/websites.json) you can specify one key for each website you intend to summarise, whose keys are:
-
-    - `rss`: the URL of the given RSS feed
-    - `main_class`: the HTML *div class* that contains the article(s)
-    - `number_of_first_paragraphs_to_ignore` . In websites like Politico the first paragraphs have not relevant information (e.g. datime, author(s) name(s)).
-        If you specify a given number *n*, the first n paragraph would be ignored.
-    - `number_of_last_paragraphs_to_ignore`. In websites like Wired UK the last paragraphs have not relevant information (e.g. social media links, related articles).
-        If you specify a given number *n*, the last n paragraph would be ignored.
+- `rss`: the URL of the given RSS feed
+- `main_class`: the HTML *div class* that contains the article(s)
+- `number_of_first_paragraphs_to_ignore` . In websites like Politico the first paragraphs have not relevant information (e.g. datime, author(s) name(s)).
+    If you specify a given number *n*, the first n paragraph would be ignored.
+- `number_of_last_paragraphs_to_ignore`. In websites like Wired UK the last paragraphs have not relevant information (e.g. social media links, related articles).
+    If you specify a given number *n*, the last n paragraph would be ignored.
 
 I have uploaded an example of configuration with some of the websites I usually read. Feel free to make pull requests just to add the website you care about, I will be more than happy to accept them.
 ### 3. Build & launch the project
