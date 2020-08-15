@@ -22,6 +22,24 @@ class DatabaseIOUT(unittest.TestCase):
                          database_io.get_delta([], self.new_articles),
                          "If there aren't old articles the delta must be equal to the new articles")
 
+    def test_get_not_sent_summaries(self):
+        before_sending = [
+            {
+                'title': "pippo",
+                'url': "https://i.com",
+                'source': "TheGuardian",
+                "summary": "ciao",
+                "sent": False
+            }, {
+                'title': "abc",
+                'url': "http://google.xyz",
+                'source': "Khaled",
+                "sent": True
+            }]
+        database_io.insert_items_in_db(before_sending, "test_update.json", "articles")
+        articles_in_db = database_io.retrieve_items_from_db("test_update.json", "sent_articles")[0]
+        self.assertEqual(before_sending[0], articles_in_db, "Correctly retrieved not sent article")
+
     def test_insert_data(self):
         """
         TO DO: instead of creating a local db use a stub
