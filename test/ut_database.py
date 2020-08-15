@@ -39,6 +39,7 @@ class DatabaseIOUT(unittest.TestCase):
         database_io.insert_items_in_db(before_sending, "test_update.json", "articles")
         articles_in_db = database_io.retrieve_items_from_db("test_update.json", "sent_articles")[0]
         self.assertEqual(before_sending[0], articles_in_db, "Correctly retrieved not sent article")
+        os.remove("test_update.json")
 
     def test_insert_data(self):
         """
