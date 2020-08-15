@@ -1,5 +1,6 @@
 import unittest
 import src.database_io as database_io
+import os
 
 
 class DatabaseIOUT(unittest.TestCase):
@@ -26,10 +27,36 @@ class DatabaseIOUT(unittest.TestCase):
         TO DO: instead of creating a local db use a stub
         :return:
         """
-        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
-        database_io.update_items_in_db(self.old_articles, "test.json", "articles")
+        database_io.insert_items_in_db(self.old_articles, "test.json", "articles")
+        database_io.insert_items_in_db(self.old_articles, "test.json", "articles")
         articles_in_db = database_io.retrieve_items_from_db("test.json", "articles")
-        self.assertEqual(self.old_articles, articles_in_db)
+        self.assertEqual(self.old_articles, articles_in_db, "articles are not added multiple times")
+        os.remove("test.json")
+
+    def test_update_items_in_db(self):
+        before_sending = [
+            {
+                'title': "pippo",
+                'url': "https://i.com",
+                'source': "TheGuardian",
+                "summary": "ciao",
+                "sent": False
+            }, {
+                'title': "abc",
+                'url': "http://google.xyz",
+                'source': "Khaled",
+                "sent": False
+            }]
+        database_io.insert_items_in_db(before_sending, "test_update.json", "articles")
+        database_io.insert_items_in_db([{'url': 'https://i.com'}], "test_update.json", "sent_articles")
+        articles_in_db = database_io.retrieve_items_from_db("test_update.json", "articles")
+        # Let's keep only the fields we are interested
+        articles_in_db = [{'url': x['url'], 'sent': x['sent']} for x in articles_in_db]
+        self.assertEqual([{'url': 'https://i.com', 'sent': True},
+                          {'url': 'http://google.xyz', 'sent': False}],
+                         articles_in_db,
+                         "The sent field is correctly updated")
+        os.remove("test_update.json")
 
 
 if __name__ == '__main__':

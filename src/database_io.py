@@ -41,7 +41,7 @@ def get_delta(old_items, current_items):
     return delta
 
 
-def update_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:str):
+def insert_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:str):
     """
     Add the given items in the JSON "DB" file
     :param items: items used in the last execution that should be added to the given db
@@ -49,7 +49,7 @@ def update_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:st
     :param items_to_store: whether to update articles or messages db
     :return:
     """
-    logging.info("update_items_in_db >>>")
+    logging.info("insert_items_in_db >>>")
     db = TinyDB(articles_db_fn)
     q = Query()
     for item in items:
@@ -57,5 +57,7 @@ def update_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:st
             db.upsert(item, q.url == item['url'])
         elif items_to_store == "messages":
             db.upsert(item, q.fn == item['fn'])
+        elif items_to_store == "sent_articles":
+            db.update({'sent': True}, q.url == item['url'])
     db.close()
-    logging.info("update_items_in_db <<<")
+    logging.info("insert_items_in_db <<<")
