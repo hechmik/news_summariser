@@ -38,12 +38,16 @@ def get_delta(old_items, current_items):
     logging.info("get_delta >>>")
     if not old_items:
         return current_items
-    delta = [item for item in current_items if item not in old_items]
+    # Delete sent and summary fields so that the two list have the "same" fields
+    old_articles= [{k: article[k] for k in article.keys() if k != 'sent' and k != 'summary'} for article in old_items]
+    # In the DB the "source" field isn't stored, however it is necessary for correctly scrape the article. Therefore
+    # it is ignored for the comparison between the two list, however it is important to include it in the final list
+    delta = [item for item in current_items if {k: item[k] for k in item.keys() if k != 'source'} not in old_articles]
     logging.info("get_delta <<<")
     return delta
 
 
-def insert_items_in_db(items: List[dict], articles_db_fn: str, items_to_store:str):
+def insert_items_in_db(items: List[dict], articles_db_fn: str, items_to_store: str):
     """
     Add the given items in the JSON "DB" file
     :param items: items used in the last execution that should be added to the given db

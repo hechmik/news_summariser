@@ -16,25 +16,10 @@ import telegram_bot
 import transformers_summaries
 
 
-def store_summaries(summaries):
-    """
-    Given a list of summaries, store them in the right path
-    :param summaries:
-    :return:
-    """
-    path = os.path.join(settings['summaries_dir'], settings['summaries_fn'])
-    summary_fn = path.format(str(datetime.now()))
-    with open(summary_fn, 'w') as file:
-        file.write(json.dumps(summaries))
-    logging.info("Summaries stored")
-
-
 def summarise_current_article(text):
     """
     Summarise the given article text
-    :param text:
-    :param article_url:
-    :param article:
+    :param text: text of the current article
     :return:
     """
     logging.info("summarise_current_article >>>")
@@ -71,19 +56,20 @@ def summarise_new_articles():
         if text:
             try:
                 article_summary = summarise_current_article(text)
-                current_article_summary = {"title": article['title'],
-                                           "summary": article_summary,
-                                           "url": article_url}
+                current_article_summary = {
+                    "title": article['title'],
+                    "summary": article_summary,
+                    "url": article_url,
+                    "sent": False}
                 if current_article_summary:
                     summaries.append(current_article_summary)
             except Exception as ex:
                 logging.error("Unable to summarise %s", article_url)
                 logging.error(ex)
     logging.info("Finished to summarise articles!")
-    # Store summaries and update DB only if there are new summaries
+    # Update DB only if there are new summaries
     if summaries:
-        store_summaries(summaries)
-        database_io.update_items_in_db(articles_infos, db_path, "articles")
+        database_io.insert_items_in_db(summaries, db_path, "articles")
         logging.info("Articles db updated!")
     if settings['send_summaries_via_telegram']:
         telegram_bot.send_summaries(settings)
