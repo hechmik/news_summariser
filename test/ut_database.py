@@ -27,13 +27,11 @@ class DatabaseIOUT(unittest.TestCase):
             {
                 'title': "pippo",
                 'url': "https://i.com",
-                'source': "TheGuardian",
                 "summary": "ciao",
                 "sent": False
             }, {
                 'title': "abc",
                 'url': "http://google.xyz",
-                'source': "Khaled",
                 "sent": True
             }]
         database_io.insert_items_in_db(before_sending, "test_update.json", "articles")
