@@ -41,7 +41,11 @@ def scrape_page(link: str, article_class: str, first_paragraph_index: int, last_
         soup = BeautifulSoup(page.content, 'html.parser')
         article_content = soup.find("div", class_=article_class)
         article = []
-        paragraphs = article_content.find_all('p')
+        try:
+            paragraphs = article_content.find_all('p')
+        except AttributeError as ae:
+            logging.warning("Can't find article text for {}, trying fallback strategies".format(link))
+            paragraphs = soup.find_all('p', {"class": article_class})
         # If there is no paragraph the article text is on several div class
         if not paragraphs:
             paragraphs = soup.find_all("div", class_=article_class)
