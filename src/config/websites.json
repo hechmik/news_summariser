@@ -19,14 +19,8 @@
 	},
 	"Politico": {
 		"rss": "https://www.politico.eu/feed/",
-		"main_class": "story-text has-sidebar",
+		"main_class": "article__content",
 		"number_of_first_paragraphs_to_ignore": 5,
-		"number_of_last_paragraphs_to_ignore": 0
-	},
-	"EOS": {
-		"rss": "https://eos.org/feed",
-		"main_class": "content-well",
-		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	},
 	"Financial hacker": {
@@ -38,6 +32,12 @@
 	"Hacker noon": {
 		"rss": "https://hackernoon.com/feed",
 		"main_class": "paragraph",
+		"number_of_first_paragraphs_to_ignore": 0,
+		"number_of_last_paragraphs_to_ignore": 0
+	},
+	"Ars Technica": {
+		"rss": "http://feeds.arstechnica.com/arstechnica/index",
+		"main_class": "article-content post-page",
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	}
