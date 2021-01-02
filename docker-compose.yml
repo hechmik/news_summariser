@@ -10,3 +10,5 @@ services:
       - ./db:/news_summariser/db
       - ./log:/news_summariser/log
       - ./transformers:/root/.cache/torch/transformers
+    ports:
+      - "5000:5000"
