@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+			.outerDiv
+			{
+				background-color: #006699;
+				color: #fff;
+				height: 400px;
+				width: 600px;
+				margin: 0px auto;
+				padding: 5px;
+			}
+			.leftDiv
+			{
+				background-color: #efefef;
+				color: #000;
+				height: 400px;
+				width: 48%;
+				float: left;
+			}
+			.rightDiv
+			{
+				background-color: #efefef;
+				color: #000;
+				height: 400px;
+				width: 48%;
+				float: right;
+			}
+
+
+    </style>
+</head>
+<body>
+
+
+<div>
+    <h2> Summarise text </h2>
+</div>
+<div class="outerDiv">
+    <div class="leftDiv">
+        <form action="http://localhost:5000/" method="post">
+            <textarea id="text_to_summarise" name="rawtext" rows="30" cols="60">
+            </textarea>
+            <br><br>
+            <input type="submit" value="Submit">
+        </form>
+     </div>
+    <div id="summary" class="rightDiv">
+        {{ summary }}
+    </div>
+</div>
+
+</body>
+</html>
