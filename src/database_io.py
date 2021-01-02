@@ -39,10 +39,14 @@ def get_delta(old_items, current_items):
     if not old_items:
         return current_items
     # Delete sent and summary fields so that the two list have the "same" fields
-    old_articles= [{k: article[k] for k in article.keys() if k != 'sent' and k != 'summary'} for article in old_items]
-    # In the DB the "source" field isn't stored, however it is necessary for correctly scrape the article. Therefore
-    # it is ignored for the comparison between the two list, however it is important to include it in the final list
-    delta = [item for item in current_items if {k: item[k] for k in item.keys() if k != 'source'} not in old_articles]
+    old_articles = [{k: article[k] for k in article.keys() if k != 'sent' and k != 'summary'} for article in old_items]
+    delta = []
+    for item in current_items:
+        # Remove the "source" key as it isn't stored in the DB
+        curr_article = {k: item[k] for k in item.keys() if k != 'source'}
+        # Check if the current article was already scraped or not
+        if curr_article not in old_articles:
+            delta.append(item)
     logging.info("get_delta <<<")
     return delta
 
