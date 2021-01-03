@@ -208,7 +208,7 @@ def build_similarity_matrix(sentences: List[str], model):
 def pagerank_summarisation(matrix,
                            n_sentences: int,
                            original_article: List[str],
-                           tol=0.05,
+                           tol=0.1,
                            max_iter=150):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.

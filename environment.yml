@@ -16,6 +16,7 @@ dependencies:
   - schedule
   - pytorch
   - torchvision
+  - flask
   - pip
   - pip:
       - transformers

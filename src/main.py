@@ -5,8 +5,6 @@ python3 main.py for executing the summarisation operations!
 """
 import logging
 import json
-from datetime import datetime
-import os
 import schedule
 import feed
 import summariser
@@ -14,15 +12,20 @@ import scraper
 import database_io
 import telegram_bot
 import transformers_summaries
+from flask import Flask, render_template, request
+
+global MODEL
 
 
-def summarise_current_article(text):
+def summarise_current_article(text, settings):
     """
     Summarise the given article text
+    :param settings:
     :param text: text of the current article
     :return:
     """
     logging.info("summarise_current_article >>>")
+
     summary = summariser.create_summary(text,
                                         MODEL,
                                         reduction_factor=settings['reduction_factor'],
@@ -55,7 +58,7 @@ def summarise_new_articles():
 
         if text:
             try:
-                article_summary = summarise_current_article(text)
+                article_summary = summarise_current_article(text, settings)
                 current_article_summary = {
                     "title": article['title'],
                     "summary": article_summary,
@@ -74,6 +77,41 @@ def summarise_new_articles():
     if settings['send_summaries_via_telegram']:
         telegram_bot.send_summaries(settings)
     logging.info("summarise_new_articles <<<")
+
+
+def activate_endpoint(settings):
+    # start flask
+    app = Flask(__name__)
+
+    # Homepage
+    @app.route('/')
+    def home():
+        return render_template('homepage.html')
+
+    # Summarisation endpoint
+    @app.route('/', methods=['POST'])
+    def get_data():
+        raw_text = request.form['rawtext']
+        split_text = summariser.split_text_into_sentences(raw_text)
+        return render_template("homepage.html",
+                               summary=str(summarise_current_article(split_text, settings)))
+
+    return app
+
+
+def load_model(settings):
+    global MODEL
+    algorithm = settings['algorithm']
+    if algorithm == "pagerank":
+        import word_mover_distance.model as model
+        we = model.WordEmbedding(model_fn=settings['word_embedding_fn'])
+        MODEL = {"distance_metric": settings['distance_metric'],
+                 "model_object": we,
+                 "empty_strategy": settings['empty_strategy']}
+    elif algorithm == "t5" or algorithm == "bart":
+        MODEL = transformers_summaries.load_transformer_model()
+    else:
+        MODEL = None
 
 
 if __name__ == "__main__":
@@ -95,22 +133,15 @@ if __name__ == "__main__":
                                   datefmt="%d-%m-%Y %H:%M:%S")
     console.setFormatter(formatter)
     logging.getLogger("").addHandler(console)
-
-    logging.info('Application started')
     # Download, if needed, necessary libraries for text processing
     summariser.download_dependencies()
     # Load Word Embedding model
-    algorithm = settings['algorithm']
-    if algorithm == "pagerank":
-        import word_mover_distance.model as model
-        we = model.WordEmbedding(model_fn=settings['word_embedding_fn'])
-        MODEL = {"distance_metric": settings['distance_metric'],
-                 "model_object": we,
-                 "empty_strategy": settings['empty_strategy']}
-    elif algorithm == "t5" or algorithm == "bart":
-        MODEL = transformers_summaries.load_transformer_model()
-    else:
-        MODEL = None
+    load_model(settings)
+    logging.info('Application started')
+    if settings['activate_endpoint']:
+        app = activate_endpoint(settings)
+        app.run(host="0.0.0.0")
+
     db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()

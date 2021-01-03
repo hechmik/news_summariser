@@ -12,5 +12,5 @@
   "telegram_token": "",
   "always_on_execution_mode": true,
   "scheduling_minutes": 120,
-  "empty_strategy": "fill"
+  "activate_endpoint": true
 }

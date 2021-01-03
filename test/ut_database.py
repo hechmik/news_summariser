@@ -4,8 +4,8 @@ import os
 
 
 class DatabaseIOUT(unittest.TestCase):
-    old_articles = [{'title': "pippo", 'url': "https://i.com", 'source': "TheGuardian"},
-                    {'title': "abc", 'url': "http://google.xyz", 'source': "Khaled"}]
+    old_articles = [{'title': "pippo", 'url': "https://i.com"},
+                    {'title': "abc", 'url': "http://google.xyz"}]
     new_articles = [{'title': "pippo", 'url': "https://i.com", 'source': "TheGuardian"},
                     {'title': "abc", 'url': "http://google.xyz", 'source': "Khaled"},
                     {'title': "Praise the UT", 'url': "http://truth.abc", 'source': "Master"}]
