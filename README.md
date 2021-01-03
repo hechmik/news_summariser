@@ -16,9 +16,10 @@ In order to achieve my starting goal this project is structured as follows:
 1. Most recent articles are obtained by subscribing to the websites of interest' RSS feeds
 2. Each article is scraped in order to obtain the full text. This is necessary because in the majority of cases a RSS feed contain only the first couple of sentences, redirecting the user to the original website for all the remaining infos
 3. An extractive summary is created for each article
-4. Summaries are stored on disk as JSON files
-5. (Optional): Summaries are sent to a Telegram Bot, so that you can read the news using the popular app
+4. Summaries are stored in the DB
+5. (Optional): Summaries are sent to a Telegram Bot of your choice, so that you can read the news using the app
 6. (Optional): Steps 1-5 are repeated every X minutes
+7. (Optional): You can summarise a text of your choice through an HTML page
 
 ## How to run the news summariser
 The preferred way to run this project is via Docker. The reason why is that in this way you will keep your environment clean and it is safe to assume that everything will work. In order to do this, assuming you have Docker installed on your machines you will need to execute the following instructions:
@@ -57,6 +58,7 @@ In [settings.json](src/config/settings.json) the following parameters are specif
 - `always_on_execution_mode`: whether to execute the entire project every X minutes or not, expressed as boolean
 - `scheduling_minutes`: how frequent (in minutes) the entire project is run
 - `empty_strategy` : if set to `fill`, words not in the given Word Embedding model will be replaced by a vector of 0s. Otherwise they will be skipped(only for PageRank)
+- `activate_endpoint`: boolean flag regarding the activation of a Rest API for summarising text. More info on Section 4.
 
 ##### 2.1.2 Which summarisation algorithm should I choose?
 
@@ -86,6 +88,15 @@ When the project is successfully build the following commands will be useful:
 - `docker-compose up -d`: starts the project, the `-d` flag run containers in the background (detached mode)
 - `docker-compose down`: stops the container(s)
 
+## 4. (Optional) Use the Rest API
+
+Now the News Summariser also has a Rest API, made using Flask, that enables to quickly summarise a given text. In order to use this functionality, assuming you have set the `activate_endpoint` flag to `true` in the settings file, you need to:
+- Access the backend by going at the following address http://localhost:5000/ with a browser of your choice
+- Paste in the box on the left the text you want to summarise
+- Press Submit
+
+You'll find the summarised text on the right. Currently it uses the settings specified in the settings.json configuration file but in the next weeks I'll add the possibility to personalize some of the summarisation parameters directly through the webpage.
+
 ## Next steps
 
 In the next weeks I will work on the following points in order to improve the news summariser:
@@ -93,6 +104,8 @@ In the next weeks I will work on the following points in order to improve the ne
 - [X] Pick the most diverse (and meaningful) sentences in an alternative/simpler way (currently PageRank is used)
 - [X] Send output summaries via Telegram and/or email
 - [X] Use other similarity functions
+- [ ] Personalize Rest API summaries (e.g. let the user decide the algorithm, reduction factor etc.)
+- [ ] Enable summaries of files (e.g. PDF, Word, TXT)
 - [ ] Multilang support (at least for one summarisation strategy)
 - [ ] Find a way for getting articles' text without having to specify the div class
 
