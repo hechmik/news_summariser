@@ -114,6 +114,11 @@ def load_model(settings):
         MODEL = None
 
 
+def run_backend():
+    app = activate_endpoint(settings)
+    app.run(host="0.0.0.0")
+
+
 if __name__ == "__main__":
     # Load configuration files
     with open("config/websites.json", "r") as f:
@@ -139,8 +144,11 @@ if __name__ == "__main__":
     load_model(settings)
     logging.info('Application started')
     if settings['activate_endpoint']:
-        app = activate_endpoint(settings)
-        app.run(host="0.0.0.0")
+        import multiprocessing
+        # Multiprocessing is needed in order to launch the Rest API and executing the remaining code.
+        # The reason why is that app.run, by default in Flask, doesn't allow the execution of further instructions
+        p = multiprocessing.Process(target=run_backend)
+        p.start()
 
     db_path = settings['db_path']
     # Execute the whole operation at launch
