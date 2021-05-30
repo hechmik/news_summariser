@@ -1,7 +1,7 @@
 {
 	"The Guardian-International": {
 		"rss": "https://www.theguardian.com/uk/technology/rss",
-		"main_class": "content__article-body from-content-api js-article__body",
+		"main_class": "article-body-commercial-selector article-body-viewer-selector dcr-bjn8wh",
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 0
 	},
@@ -13,7 +13,7 @@
 	},
 	"Wired UK": {
 		"rss": "https://www.wired.co.uk/rss/article",
-		"main_class": "a-body__content has-bbcode",
+		"main_class": "grid--item body body__container article__body grid-layout__content",
 		"number_of_first_paragraphs_to_ignore": 0,
 		"number_of_last_paragraphs_to_ignore": 6
 	},
