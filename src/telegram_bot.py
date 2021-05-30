@@ -29,6 +29,7 @@ def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
         logging.error(
             "Unable to send the following message: {message}".format(message=bot_message))
         logging.error(response)
+        raise Exception
     logging.info("telegram_bot_sendtext <<<")
 
 
@@ -55,8 +56,11 @@ def send_summaries(settings: dict):
                                   helpers.escape_markdown("No summaries to send!", "2"))
         else:
             for summary in summaries_to_send:
-                send_current_summary_as_message(summary, bot_chat_id, bot_token)
-                summaries_successfully_sent.append({'url': summary['url']})
+                try:
+                    send_current_summary_as_message(summary, bot_chat_id, bot_token)
+                    summaries_successfully_sent.append({'url': summary['url']})
+                except Exception:
+                    logging.error("Unable to send current article")
         database_io.insert_items_in_db(summaries_successfully_sent, db_dir, "sent_articles")
     except ConnectionError as ce:
         logging.error("Cant' send the current message: is connection ok?")
@@ -91,10 +95,9 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
         telegram_bot_sendtext(bot_chat_id, bot_token, message)
         time.sleep(1)
     else:
-        splits = round(message_len / chat_max_len + 1)
+        splits = int(message_len / chat_max_len) + 1
+        logging.warning(f"Article {url} has len {len(summary)}, splitting it into {splits} chunks")
         for i in range(splits):
             end_index = chat_max_len * (i + 1)
-            if end_index > chat_max_len:
-                end_index = chat_max_len
             telegram_bot_sendtext(bot_chat_id, bot_token, message[i * 4096:end_index])
             time.sleep(1)
