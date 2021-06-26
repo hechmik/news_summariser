@@ -272,7 +272,6 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
     """
     logging.info("tf_idf_summarisation >>>")
     vectorizer = TfidfVectorizer()
-    preprocessed_sentences = ["".join(s) for s in preprocessed_sentences]
     tfidf_matrix = vectorizer.fit_transform(preprocessed_sentences)
     number_of_sentences = tfidf_matrix.shape[0]
     scores = []
@@ -316,6 +315,9 @@ def create_summary(text: List[str],
         stopws = load_stop_words()
         lemmatiser = initialise_lemmatiser()
         preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
+        # Ensure that preprocessed sentences is a list of strings, otherwise words will be glued together:
+        if any(isinstance(el, list) for el in preprocessed_sentences):
+            preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
         if algorithm == "pagerank":
             matrix = build_similarity_matrix(preprocessed_sentences, model)
             summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
