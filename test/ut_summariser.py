@@ -9,7 +9,7 @@ class SummariserUT(unittest.TestCase):
     summariser.download_dependencies()
     lemmatiser = summariser.initialise_lemmatiser()
     stopws = summariser.load_stop_words()
-    we = model.WordEmbedding(model_fn="/Users/kappa/repositories/glove.6B/glove.6B.50d.txt")
+    we = model.WordEmbedding(model_fn="../glove.6B.50d.txt")
     cosine_model = {"distance_metric": "cosine", "model_object": we, "empty_strategy": "fill"}
     wmd_model = {"distance_metric": "wmd", "model_object": we, "empty_strategy": "fill"}
     bart_model = transformers_summaries.load_transformer_model("bart")
@@ -72,16 +72,17 @@ class SummariserUT(unittest.TestCase):
                 "my favourite tv show is made by another khaled",
                 "the movie i hate the most is titanic and yours?"]
         scores = [100, 50, 110, 1]
-        scored_sentences = summariser.get_sentences_by_scores(n_sentences=4,
-                                                              scores=scores,
+        settings = {'reduction_factor':1}
+        scored_sentences = summariser.get_sentences_by_scores(scores=scores,
                                                               sentences=text,
+                                                              settings=settings,
                                                               maximise_score=True)
         self.assertEqual(text, scored_sentences,
                          "If summary length is equal to the original text length they should be the same")
-
-        scored_sentences = summariser.get_sentences_by_scores(n_sentences=2,
-                                                              scores=scores,
+        settings = {'reduction_factor': 2}
+        scored_sentences = summariser.get_sentences_by_scores(scores=scores,
                                                               sentences=text,
+                                                              settings=settings,
                                                               maximise_score=True)
         expected_output = [text[0], text[2]]
         self.assertEqual(expected_output, scored_sentences,
@@ -94,28 +95,36 @@ class SummariserUT(unittest.TestCase):
                 "the movie i hate the most is titanic and yours?",
                 "I really enjoy coding, I find that its a sort of magic activity where you are able to generate new values from scratch.",
                 "Apart from that, I love spending my spare time reading, watching motorsport and traveling around the world."]
-
-        summary = summariser.create_summary(text, None, 2, 1, "tf_idf")
+        settings = {
+            'reduction_factor': 2,
+            'min_words_in_sentence': 1,
+            'algorithm': 'tf_idf'
+        }
+        summary = summariser.create_summary(text, None, settings)
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.cosine_model, 2, 1, "pagerank")
+        settings['algorithm'] = 'pagerank'
+        summary = summariser.create_summary(text, self.cosine_model, settings)
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.wmd_model, 2, 1, "pagerank")
+        summary = summariser.create_summary(text, self.wmd_model, settings)
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.bart_model, 2, 1, "bart")
+        settings['algorithm'] = 'bart'
+        summary = summariser.create_summary(text, self.bart_model, settings)
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.t5_model, 2, 1, "t5")
+        settings['algorithm'] = 't5'
+        summary = summariser.create_summary(text, self.bart_model, settings)
         self.assertTrue(len(summary) > 0)
         self.assertTrue(len(summary) < len(" ".join(text)), "The summary is shorter than the original text")
 
-        summary = summariser.create_summary(text, self.cosine_model, 2, 1, "invalid_method")
+        settings['algorithm'] = 'invalid_method'
+        summary = summariser.create_summary(text, self.bart_model, settings)
         self.assertTrue(summary == "")
 
     def test_vectorize_sentence(self):
