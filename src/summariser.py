@@ -206,18 +206,16 @@ def build_similarity_matrix(sentences: List[str], model):
 
 
 def pagerank_summarisation(matrix,
-                           n_sentences: int,
                            original_article: List[str],
-                           threshold,
+                           settings: dict,
                            tol=0.01,
                            max_iter=200,
                            ):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.
     :param matrix: sentences similarity matrix
-    :param n_sentences: number of sentences to pick
     :param original_article: original phrases
-    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
+    :param settings: Dictionary with summarisation settings to use
     :param tol: tolerance parameter for PageRank convergence
     :param max_iter: maximum number of iteration for PageRank convergence
     :return:
@@ -226,24 +224,36 @@ def pagerank_summarisation(matrix,
     graph = nx.from_numpy_array(matrix)
     scores_dict = nx.pagerank(graph, max_iter=max_iter, tol=tol)
     scores = list(scores_dict.values())
-    summary = get_sentences_by_scores(n_sentences, scores, original_article, True, threshold)
+    summary = get_sentences_by_scores(scores, original_article, True, settings)
     text = " ".join(summary)
     logging.info("find_top_n_sentences <<<")
     return text
 
 
-def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool, threshold):
+def get_sentences_by_scores(scores, sentences: List[str], maximise_score: bool, settings):
     """
     Return the sentences which maximise/minimise the given scores preserving their original order
-    :param n_sentences: number of sentences to include in the output list
     :param scores: scores associated with the given sentences
     :param sentences: List of sentences to evaluate
     :param maximise_score: whether to choose sentence that maximise or minimise the given scores
+    :param settings: Dictionary with summarisation settings to use
     :return:
     """
     logging.info("get_sentences_by_scores >>>")
+
+    reduction_factor = settings['reduction_factor']
+    if reduction_factor == 'auto':
+        n_sentences = 0
+    else:
+        n_sentences = math.ceil(len(sentences) / reduction_factor)
+    if n_sentences >= len(sentences):
+        logging.warning("Reduction factor too high, returning whole article without short sentences")
+        return sentences
+
     if n_sentences <= 0:
-        if not threshold:
+        if 'threshold' in settings.keys():
+            threshold = settings['threshold']
+        else:
             threshold = np.average(scores) * 1.1
         if maximise_score:
             summary_sentences_index = np.where(np.array(scores) >= threshold)[0]
@@ -274,14 +284,12 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
 
 def tf_idf_summarisation(preprocessed_sentences: List[str],
                          original_article: List[str],
-                         n_sentences: int,
-                         threshold):
+                         settings: dict):
     """
     Create a summary according to tf-idf values in the given text
     :param preprocessed_sentences: previously pre-processed sentences
     :param original_article: sentences to evaluate for summarisation in their original form
-    :param n_sentences: number of sentences to include for each summary
-    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
+    :param settings: Dictionary with summarisation settings to use
     :return:
     """
     logging.info("tf_idf_summarisation >>>")
@@ -296,7 +304,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
         # Compute the average tf-idf value in the given sentence
         curr_sent_avg_score = np.mean(tf_idf_score_curr_sent)
         scores.append(curr_sent_avg_score)
-    summary = get_sentences_by_scores(n_sentences, scores, original_article, True, threshold)
+    summary = get_sentences_by_scores(scores, original_article, True, settings)
     # Transform the summary back into a string
     summary = " ".join(summary)
     logging.info("tf_idf_summarisation <<<")
@@ -304,48 +312,35 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
 
 
 def create_summary(text: List[str],
-                   model: dict,
-                   reduction_factor: int,
-                   min_words_in_sentence: int,
-                   algorithm: str,
-                   threshold):
+                   model,
+                   settings: dict):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
     :param model: Word Embeddings model
-    :param reduction_factor: how much to reduce the article's length.
-    The final summary will have N of sentences = n of sentences/reduction_factor
-    :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
-    :param algorithm: Which approach to use for computing the summary
-    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
+    :param settings: Dictionary with summarisation settings to use
     :return:
     """
     logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
-    if reduction_factor == 'auto':
-        desired_summary_length = 0
+
+    sentences = filter_sentences_by_length(sentences, settings['min_words_in_sentence'])
+    stopws = load_stop_words()
+    lemmatiser = initialise_lemmatiser()
+    preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
+    # Ensure that preprocessed sentences is a list of strings, otherwise words will be glued together:
+    if any(isinstance(el, list) for el in preprocessed_sentences):
+        preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
+    algorithm = settings['algorithm']
+    if algorithm == "pagerank":
+        matrix = build_similarity_matrix(preprocessed_sentences, model)
+        summary = pagerank_summarisation(matrix, sentences, settings)
+    elif algorithm == "tf_idf":
+        summary = tf_idf_summarisation(preprocessed_sentences, sentences, settings)
+    elif algorithm == "bart" or algorithm == "t5":
+        summary = generate_transformers_summary(sentences, model)
     else:
-        desired_summary_length = math.ceil(len(sentences) / reduction_factor)
-        sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
-    if desired_summary_length >= len(sentences):
-        logging.warning("Reduction factor too high, returning whole article without short sentences")
-        summary = " ".join(sentences)
-    else:
-        stopws = load_stop_words()
-        lemmatiser = initialise_lemmatiser()
-        preprocessed_sentences = [preprocess_text(s, stopws, lemmatiser) for s in sentences]
-        # Ensure that preprocessed sentences is a list of strings, otherwise words will be glued together:
-        if any(isinstance(el, list) for el in preprocessed_sentences):
-            preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
-        if algorithm == "pagerank":
-            matrix = build_similarity_matrix(preprocessed_sentences, model)
-            summary = pagerank_summarisation(matrix, desired_summary_length, sentences, threshold)
-        elif algorithm == "tf_idf":
-            summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length, threshold)
-        elif algorithm == "bart" or algorithm == "t5":
-            summary = generate_transformers_summary(sentences, model)
-        else:
-            logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
-            summary = ""
+        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
+        summary = ""
     logging.info("create_summary <<<")
     return summary

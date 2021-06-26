@@ -16,26 +16,6 @@ from flask import Flask, render_template, request
 
 global MODEL
 
-def summarise_current_article(text, settings):
-    """
-    Summarise the given article text
-    :param settings:
-    :param text: text of the current article
-    :return:
-    """
-    logging.info("summarise_current_article >>>")
-    threshold = None
-    if 'threshold' in settings.keys():
-        threshold = settings['threshold']
-    summary = summariser.create_summary(text,
-                                        MODEL,
-                                        reduction_factor=settings['reduction_factor'],
-                                        min_words_in_sentence=settings['min_words_in_sentence'],
-                                        algorithm=settings['algorithm'],
-                                        threshold=threshold)
-    logging.info("summarise_current_article <<<")
-    return summary
-
 
 def summarise_new_articles():
     """
@@ -44,6 +24,7 @@ def summarise_new_articles():
     """
     logging.info("summarise_new_articles >>>")
     # Get the list of articles summarised in the past
+    db_path = settings['db_path']
     old_articles = database_io.retrieve_items_from_db(db_path, "articles")
     articles_infos = feed.get_feeds_articles(website_infos, old_articles)
     summaries = []
@@ -60,7 +41,7 @@ def summarise_new_articles():
 
         if text:
             try:
-                article_summary = summarise_current_article(text, settings)
+                article_summary = summariser.create_summary(text, MODEL, settings)
                 current_article_summary = {
                     "title": article['title'],
                     "summary": article_summary,
@@ -96,7 +77,7 @@ def activate_endpoint(settings):
         raw_text = request.form['rawtext']
         split_text = summariser.split_text_into_sentences(raw_text)
         return render_template("homepage.html",
-                               summary=str(summarise_current_article(split_text, settings)))
+                               summary=str(summariser.create_summary(split_text, MODEL, settings)))
 
     return app
 
@@ -155,7 +136,6 @@ if __name__ == "__main__":
         p = multiprocessing.Process(target=run_backend)
         p.start()
 
-    db_path = settings['db_path']
     # Execute the whole operation at launch
     summarise_new_articles()
     if settings['always_on_execution_mode']:
