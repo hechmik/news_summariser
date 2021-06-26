@@ -16,7 +16,6 @@ from flask import Flask, render_template, request
 
 global MODEL
 
-
 def summarise_current_article(text, settings):
     """
     Summarise the given article text
@@ -105,9 +104,12 @@ def load_model(settings):
     if algorithm == "pagerank":
         import word_mover_distance.model as model
         we = model.WordEmbedding(model_fn=settings['word_embedding_fn'])
+        empty_strategy = None
+        if 'empty_strategy' in settings.keys():
+            empty_strategy = settings['empty_strategy']
         MODEL = {"distance_metric": settings['distance_metric'],
                  "model_object": we,
-                 "empty_strategy": settings['empty_strategy']}
+                 "empty_strategy": empty_strategy}
     elif algorithm == "t5" or algorithm == "bart":
         MODEL = transformers_summaries.load_transformer_model()
     else:
