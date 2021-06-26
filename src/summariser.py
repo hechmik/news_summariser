@@ -197,7 +197,7 @@ def build_similarity_matrix(sentences: List[str], model):
     matrix = np.zeros((n_sent, n_sent))
     for i in range(0, n_sent):
         for j in range(0, n_sent):
-            if i != j:
+            if i != j and matrix[i, j] == 0:
                 matrix[i, j] = matrix[j, i] = compute_sentence_similarity(sentences[i],
                                                                           sentences[j],
                                                                           model)
