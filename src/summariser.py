@@ -228,7 +228,7 @@ def pagerank_summarisation(matrix,
     return text
 
 
-def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool):
+def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool, threshold=0.5):
     """
     Return the sentences which maximise/minimise the given scores preserving their original order
     :param n_sentences: number of sentences to include in the output list
@@ -238,23 +238,30 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
     :return:
     """
     logging.info("get_sentences_by_scores >>>")
-    # Create a dictionary for storing sentences and their position in the given text
-    sentences_with_index = {}
-    for i, sentence in enumerate(sentences):
-        sentences_with_index[sentence] = i
-    # Order sentences by their score
-    ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)),
-                              reverse=maximise_score)
-    # Keep only most meaningful sentences
-    ranked_sentences = ranked_sentences[0:n_sentences]
-    # Get the indexes of these meaningful sentences
-    summary_sentences_index = []
-    for ranked_sentence in ranked_sentences:
-        current_sentence = ranked_sentence[1]
-        current_sentence_index = sentences_with_index[current_sentence]
-        summary_sentences_index.append(current_sentence_index)
-    # Sort indexes in ascending order: in this way we will maintain article coherence
-    summary_sentences_index.sort()
+    ##
+    if n_sentences <= 0:
+        if maximise_score:
+            summary_sentences_index = np.where(np.array(scores) >= threshold)[0]
+        else:
+            summary_sentences_index = np.where(np.array(scores) <= threshold)[0]
+    else:
+        # Create a dictionary for storing sentences and their position in the given text
+        sentences_with_index = {}
+        for i, sentence in enumerate(sentences):
+            sentences_with_index[sentence] = i
+        # Order sentences by their score
+        ranked_sentences = sorted(((scores[i], s) for i, s in enumerate(sentences)),
+                                  reverse=maximise_score)
+        # Keep only most meaningful sentences
+        ranked_sentences = ranked_sentences[0:n_sentences]
+        # Get the indexes of these meaningful sentences
+        summary_sentences_index = []
+        for ranked_sentence in ranked_sentences:
+            current_sentence = ranked_sentence[1]
+            current_sentence_index = sentences_with_index[current_sentence]
+            summary_sentences_index.append(current_sentence_index)
+        # Sort indexes in ascending order: in this way we will maintain article coherence
+        summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
     logging.info("get_sentences_by_scores <<<")
     return summary
@@ -306,8 +313,11 @@ def create_summary(text: List[str],
     """
     logging.info("create_summary >>>")
     sentences = split_text_into_sentences(text)
-    desired_summary_length = math.ceil(len(sentences) / reduction_factor)
-    sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
+    if reduction_factor == 'auto':
+        desired_summary_length = 0
+    else:
+        desired_summary_length = math.ceil(len(sentences) / reduction_factor)
+        sentences = filter_sentences_by_length(sentences, min_words_in_sentence)
     if desired_summary_length >= len(sentences):
         logging.warning("Reduction factor too high, returning whole article without short sentences")
         summary = " ".join(sentences)
