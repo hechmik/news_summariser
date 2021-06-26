@@ -24,12 +24,15 @@ def summarise_current_article(text, settings):
     :return:
     """
     logging.info("summarise_current_article >>>")
-
+    threshold = None
+    if 'threshold' in settings.keys():
+        threshold = settings['threshold']
     summary = summariser.create_summary(text,
                                         MODEL,
                                         reduction_factor=settings['reduction_factor'],
                                         min_words_in_sentence=settings['min_words_in_sentence'],
-                                        algorithm=settings['algorithm'])
+                                        algorithm=settings['algorithm'],
+                                        threshold=threshold)
     logging.info("summarise_current_article <<<")
     return summary
 

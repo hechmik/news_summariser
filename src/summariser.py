@@ -208,27 +208,31 @@ def build_similarity_matrix(sentences: List[str], model):
 def pagerank_summarisation(matrix,
                            n_sentences: int,
                            original_article: List[str],
-                           tol=0.1,
-                           max_iter=150):
+                           threshold,
+                           tol=0.01,
+                           max_iter=200,
+                           ):
     """
     Return the n most dissimilar sentences in the matrix. The comparison is done using PageRank.
     :param matrix: sentences similarity matrix
     :param n_sentences: number of sentences to pick
     :param original_article: original phrases
+    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
     :param tol: tolerance parameter for PageRank convergence
     :param max_iter: maximum number of iteration for PageRank convergence
     :return:
     """
     logging.info("find_top_n_sentences >>>")
     graph = nx.from_numpy_array(matrix)
-    scores = nx.pagerank(graph, max_iter=max_iter, tol=tol)
-    summary = get_sentences_by_scores(n_sentences, scores, original_article, True)
+    scores_dict = nx.pagerank(graph, max_iter=max_iter, tol=tol)
+    scores = list(scores_dict.values())
+    summary = get_sentences_by_scores(n_sentences, scores, original_article, True, threshold)
     text = " ".join(summary)
     logging.info("find_top_n_sentences <<<")
     return text
 
 
-def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool, threshold=0.5):
+def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maximise_score: bool, threshold):
     """
     Return the sentences which maximise/minimise the given scores preserving their original order
     :param n_sentences: number of sentences to include in the output list
@@ -270,12 +274,14 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
 
 def tf_idf_summarisation(preprocessed_sentences: List[str],
                          original_article: List[str],
-                         n_sentences: int):
+                         n_sentences: int,
+                         threshold):
     """
     Create a summary according to tf-idf values in the given text
     :param preprocessed_sentences: previously pre-processed sentences
     :param original_article: sentences to evaluate for summarisation in their original form
     :param n_sentences: number of sentences to include for each summary
+    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
     :return:
     """
     logging.info("tf_idf_summarisation >>>")
@@ -290,7 +296,7 @@ def tf_idf_summarisation(preprocessed_sentences: List[str],
         # Compute the average tf-idf value in the given sentence
         curr_sent_avg_score = np.mean(tf_idf_score_curr_sent)
         scores.append(curr_sent_avg_score)
-    summary = get_sentences_by_scores(n_sentences, scores, original_article, True)
+    summary = get_sentences_by_scores(n_sentences, scores, original_article, True, threshold)
     # Transform the summary back into a string
     summary = " ".join(summary)
     logging.info("tf_idf_summarisation <<<")
@@ -301,7 +307,8 @@ def create_summary(text: List[str],
                    model: dict,
                    reduction_factor: int,
                    min_words_in_sentence: int,
-                   algorithm: str):
+                   algorithm: str,
+                   threshold):
     """
     Summarize the given text using n sentences.
     :param text: List of paragraphs containing the article's text
@@ -310,6 +317,7 @@ def create_summary(text: List[str],
     The final summary will have N of sentences = n of sentences/reduction_factor
     :param min_words_in_sentence: minimum number of words a sentence must have in order to be kept
     :param algorithm: Which approach to use for computing the summary
+    :param threshold: threshold to use for picking meaningful sentences (if n_sentences = 0)
     :return:
     """
     logging.info("create_summary >>>")
@@ -331,9 +339,9 @@ def create_summary(text: List[str],
             preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
         if algorithm == "pagerank":
             matrix = build_similarity_matrix(preprocessed_sentences, model)
-            summary = pagerank_summarisation(matrix, desired_summary_length, sentences)
+            summary = pagerank_summarisation(matrix, desired_summary_length, sentences, threshold)
         elif algorithm == "tf_idf":
-            summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length)
+            summary = tf_idf_summarisation(preprocessed_sentences, sentences, desired_summary_length, threshold)
         elif algorithm == "bart" or algorithm == "t5":
             summary = generate_transformers_summary(sentences, model)
         else:
