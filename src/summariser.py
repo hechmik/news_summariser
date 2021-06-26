@@ -238,8 +238,9 @@ def get_sentences_by_scores(n_sentences: int, scores, sentences: List[str], maxi
     :return:
     """
     logging.info("get_sentences_by_scores >>>")
-    ##
     if n_sentences <= 0:
+        if not threshold:
+            threshold = np.average(scores) * 1.1
         if maximise_score:
             summary_sentences_index = np.where(np.array(scores) >= threshold)[0]
         else:
