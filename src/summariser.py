@@ -322,8 +322,8 @@ def create_summary(text: List[str],
     :return:
     """
     logging.info("create_summary >>>")
-    sentences = split_text_into_sentences(text)
 
+    sentences = split_text_into_sentences(text)
     sentences = filter_sentences_by_length(sentences, settings['min_words_in_sentence'])
     stopws = load_stop_words()
     lemmatiser = initialise_lemmatiser()
@@ -340,7 +340,7 @@ def create_summary(text: List[str],
     elif algorithm == "bart" or algorithm == "t5":
         summary = generate_transformers_summary(sentences, model)
     else:
-        logging.error("Invalid algorithm. Expected pagerank or tf_idf, got %algorithm", algorithm)
+        logging.error(f"Invalid algorithm. Expected pagerank, tf_idf, bart, t5, got {algorithm}")
         summary = ""
     logging.info("create_summary <<<")
     return summary
