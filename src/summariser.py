@@ -254,7 +254,7 @@ def get_sentences_by_scores(scores, sentences: List[str], maximise_score: bool, 
         if 'threshold' in settings.keys():
             threshold = settings['threshold']
         else:
-            threshold = np.average(scores) * 1.1
+            threshold = np.average(scores)
         if maximise_score:
             summary_sentences_index = np.where(np.array(scores) >= threshold)[0]
         else:
