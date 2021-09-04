@@ -12,3 +12,4 @@ services:
       - ./transformers:/root/.cache/torch/transformers
     ports:
       - "5000:5000"
+    restart: always
