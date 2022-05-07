@@ -49,25 +49,21 @@ def send_summaries(settings: dict):
     # List where summaries that were successfully sent will be stored
     summaries_successfully_sent = []
     # If there aren't new summaries just send a default message
-    try:
-        if not summaries_to_send:
-            telegram_bot_sendtext(bot_chat_id,
-                                  bot_token,
-                                  helpers.escape_markdown("No summaries to send!", "2"))
-        else:
-            for summary in summaries_to_send:
-                try:
-                    send_current_summary_as_message(summary, bot_chat_id, bot_token)
-                    summaries_successfully_sent.append({'url': summary['url']})
-                except Exception:
-                    logging.error("Unable to send current article")
+    if summaries_to_send:
+        for summary in summaries_to_send:
+            try:
+                send_current_summary_as_message(summary, bot_chat_id, bot_token)
+                summaries_successfully_sent.append({'url': summary['url']})
+            except ConnectionError as ce:
+                logging.error("Cant' send the current message: is connection ok?")
+                logging.error(ce)
+            except Exception as ex:
+                logging.error(ex)
         database_io.insert_items_in_db(summaries_successfully_sent, db_dir, "sent_articles")
-    except ConnectionError as ce:
-        logging.error("Cant' send the current message: is connection ok?")
-        logging.error(ce)
-    except Exception as ex:
-        logging.error(ex)
-
+    else:
+        telegram_bot_sendtext(bot_chat_id,
+                              bot_token,
+                              helpers.escape_markdown("No summaries to send!", "2"))
     logging.info("send_summaries <<<")
 
 
