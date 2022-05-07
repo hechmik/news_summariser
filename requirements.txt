@@ -1,0 +1,12 @@
+networkx
+tinydb
+requests
+nltk
+feedparser
+numpy
+bs4
+schedule
+flask
+python-telegram-bot
+word-mover-distance
+
