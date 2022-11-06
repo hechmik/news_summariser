@@ -63,7 +63,7 @@ def send_summaries(settings: dict):
     else:
         telegram_bot_sendtext(bot_chat_id,
                               bot_token,
-                              helpers.escape_markdown("No summaries to send!", "2"))
+                              helpers.escape_markdown("No summaries to send!", 2))
     logging.info("send_summaries <<<")
 
 
@@ -76,9 +76,9 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
     :return:
     """
     # Build message
-    title = helpers.escape_markdown(article['title'], "2")
-    url = helpers.escape_markdown(article['url'], "2")
-    summary = helpers.escape_markdown(article['summary'], "2")
+    title = helpers.escape_markdown(article['title'], 2)
+    url = helpers.escape_markdown(article['url'], 2)
+    summary = helpers.escape_markdown(article['summary'], 2)
     message = """*{title}*\n{url}\nSummary:\n{summary}""".format(
         title=title,
         url=url,
@@ -96,7 +96,7 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
         for i in range(splits):
             end_index = chat_max_len * (i + 1)
             split_message = message[i * 4096:end_index]
-            end_split_message = split_message[-2:].replace('\\','')
+            end_split_message = split_message[-2:].replace('\\', '')
             split_message = split_message[:-2] + end_split_message
-            telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown(split_message, "2"))
+            telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown(split_message, 2))
             time.sleep(1)
