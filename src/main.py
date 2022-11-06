@@ -3,6 +3,7 @@ Main class for running the summariser. Assuming you have correctly installed the
 and correctly setup the various config JSON files just type
 python3 main.py for executing the summarisation operations!
 """
+import traceback
 import logging
 import json
 import schedule
@@ -50,6 +51,7 @@ def summarise_new_articles():
                 if current_article_summary:
                     summaries.append(current_article_summary)
             except Exception as ex:
+                logging.error(traceback.format_exc())
                 logging.error("Unable to summarise %s", article_url)
                 logging.error(ex)
     logging.info("Finished to summarise articles!")
@@ -85,7 +87,7 @@ def activate_endpoint(settings):
 def load_model(settings):
     global MODEL
     algorithm = settings['algorithm']
-    if algorithm == "pagerank":
+    if algorithm in ["pagerank", "auto_summarisation"]:
         import word_mover_distance.model as model
         we = model.WordEmbedding(model_fn=settings['word_embedding_fn'])
         empty_strategy = None
@@ -113,12 +115,12 @@ if __name__ == "__main__":
         settings = json.load(f)
     logging.root.handlers = []
     logging.basicConfig(format='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
-                        level=logging.WARN,
+                        level=logging.INFO,
                         filename=settings['log_fn'])
 
     # set up logging to console
     console = logging.StreamHandler()
-    console.setLevel(logging.WARN)
+    console.setLevel(logging.INFO)
     # set a format which is simpler for console use
     formatter = logging.Formatter(fmt='%(asctime)s|%(name)s|%(levelname)s| %(message)s',
                                   datefmt="%d-%m-%Y %H:%M:%S")

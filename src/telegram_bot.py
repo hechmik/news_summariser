@@ -95,5 +95,8 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
         logging.warning(f"Article {url} has len {len(summary)}, splitting it into {splits} chunks")
         for i in range(splits):
             end_index = chat_max_len * (i + 1)
-            telegram_bot_sendtext(bot_chat_id, bot_token, message[i * 4096:end_index])
+            split_message = message[i * 4096:end_index]
+            end_split_message = split_message[-2:].replace('\\','')
+            split_message = split_message[:-2] + end_split_message
+            telegram_bot_sendtext(bot_chat_id, bot_token, helpers.escape_markdown(split_message, "2"))
             time.sleep(1)

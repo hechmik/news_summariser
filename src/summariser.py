@@ -45,6 +45,25 @@ def split_text_into_sentences(text):
     logging.debug("split_text_into_sentences <<<")
     return split_text
 
+def auto_summarisation(matrix,
+                       original_article: List[str],
+                       settings: dict,
+                       ):
+    """
+    Create a summary made of sentences whose median similarity is above/below the threshold specified in settings.
+    :param matrix: sentences similarity matrix
+    :param original_article: original phrases
+    :param settings: Dictionary with summarisation settings to use (e.g. threshold)
+    :return:
+    """
+    logging.info("auto_summarisation >>>")
+    scores = np.nanmedian(matrix, axis=1)
+    logging.info(scores)
+    summary = get_sentences_by_scores(scores, original_article, True, settings)
+    text = " ".join(summary)
+    logging.info("auto_summarisation <<<")
+    return text
+
 
 def filter_sentences_by_length(sentences, min_words_in_sentence):
     """
@@ -134,7 +153,7 @@ def preprocess_text(s: str, stopws, lemmatiser):
     return s
 
 
-def vectorize_sentence(sentence: List[str], model, empty_strategy):
+def vectorize_sentence(sentence: List[str], model, empty_strategy, stretch_factor):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
@@ -147,18 +166,21 @@ def vectorize_sentence(sentence: List[str], model, empty_strategy):
     vector_size = len(model['the'])
     for word in sentence:
         try:
-            sentence_embeddings.append(model[word])
+            sentence_embeddings.append(model[word] * stretch_factor)
         except KeyError:
-            logging.warning("Word %s not found in WE model", word)
+            logging.debug("Word %s not found in WE model", word)
             if empty_strategy == "fill":
                 sentence_embeddings.append(np.zeros(vector_size))
         except Exception as ex:
+            logging.error("Error in vectorizing sentence")
             logging.error(ex)
     if sentence_embeddings:
+        print("In sentence embeddings!")
         sentence_vector = np.average(sentence_embeddings, axis=0)
     else:
         # Return default value if no word is in the embedding
         sentence_vector = np.zeros(vector_size)
+    logging.debug("vectorize_sentence <<<")
     return sentence_vector
 
 
@@ -170,7 +192,7 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
     :param model_infos: dict where word embedding model and distance metric to use are specified
     :return:
     """
-    logging.debug("compute_sentence_similarity >>>")
+    logging.info("compute_sentence_similarity >>>")
     distance_metric = model_infos['distance_metric']
     model_obj = model_infos['model_object']
     if distance_metric == "cosine":
@@ -178,15 +200,16 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
         vector_1 = vectorize_sentence(s1, model_obj.model, empty_strategy)
         vector_2 = vectorize_sentence(s2, model_obj.model, empty_strategy)
         score = cosine(vector_1, vector_2)
+        print(vector_1[0:2], vector_2[0:2], score)
     elif distance_metric == "wmd":
         score = model_obj.wmdistance(s1, s2)
     else:
         raise NameError("Invalid distance metric: it should be cosine or wmd")
-    logging.debug("compute_sentence_similarity <<<")
+    logging.info("compute_sentence_similarity <<<")
     return score
 
 
-def build_similarity_matrix(sentences: List[str], model):
+def build_similarity_matrix(sentences: List[str], model, nan_mode=True):
     """
     Compute the similarity matrix related to all input sentences
     :param sentences: list of sentences to compare
@@ -195,10 +218,13 @@ def build_similarity_matrix(sentences: List[str], model):
     """
     logging.info("build_similarity_matrix >>>")
     n_sent = len(sentences)
-    matrix = np.zeros((n_sent, n_sent))
+    if nan_mode:
+        matrix = np.empty((n_sent, n_sent))
+    else:
+        matrix = np.zeros((n_sent, n_sent))
     for i in range(0, n_sent):
         for j in range(0, n_sent):
-            if i != j and matrix[i, j] == 0:
+            if i != j and (not matrix[i,j] or matrix[i, j] == 0 or np.isnan(matrix[i,j])):
                 matrix[i, j] = matrix[j, i] = compute_sentence_similarity(sentences[i],
                                                                           sentences[j],
                                                                           model)
@@ -279,6 +305,7 @@ def get_sentences_by_scores(scores, sentences: List[str], maximise_score: bool, 
         # Sort indexes in ascending order: in this way we will maintain article coherence
         summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
+    print(len(sentences), len(summary))
     logging.info("get_sentences_by_scores <<<")
     return summary
 
@@ -333,9 +360,14 @@ def create_summary(text: List[str],
     if any(isinstance(el, list) for el in preprocessed_sentences):
         preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
     algorithm = settings['algorithm']
-    if algorithm == "pagerank":
-        matrix = build_similarity_matrix(preprocessed_sentences, model)
-        summary = pagerank_summarisation(matrix, sentences, settings)
+    if algorithm in ["pagerank", "auto_summarisation"]:
+        #matrix = build_similarity_matrix(preprocessed_sentences, model)
+        if algorithm == "pagerank":
+            matrix = build_similarity_matrix(preprocessed_sentences, model, nan_mode=False)
+            summary = pagerank_summarisation(matrix, sentences, settings)
+        else:
+            matrix = build_similarity_matrix(preprocessed_sentences, model, nan_mode=True)
+            summary = auto_summarisation(matrix, sentences, settings)
     elif algorithm == "tf_idf":
         summary = tf_idf_summarisation(preprocessed_sentences, sentences, settings)
     elif algorithm == "bart" or algorithm == "t5":
@@ -344,4 +376,5 @@ def create_summary(text: List[str],
         logging.error(f"Invalid algorithm. Expected pagerank, tf_idf, bart, t5, got {algorithm}")
         summary = ""
     logging.info("create_summary <<<")
+    print(summary)
     return summary
