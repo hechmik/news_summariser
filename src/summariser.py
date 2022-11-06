@@ -191,7 +191,7 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
     :param model_infos: dict where word embedding model and distance metric to use are specified
     :return:
     """
-    logging.info("compute_sentence_similarity >>>")
+    logging.debug("compute_sentence_similarity >>>")
     distance_metric = model_infos['distance_metric']
     model_obj = model_infos['model_object']
     if distance_metric == "cosine":
@@ -203,7 +203,7 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
         score = model_obj.wmdistance(s1, s2)
     else:
         raise NameError("Invalid distance metric: it should be cosine or wmd")
-    logging.info("compute_sentence_similarity <<<")
+    logging.debug("compute_sentence_similarity <<<")
     return score
 
 

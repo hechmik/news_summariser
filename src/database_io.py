@@ -19,7 +19,7 @@ def retrieve_items_from_db(filename: str, items_to_retrieve: str) -> List:
         elif items_to_retrieve == "messages":
             query_result = db.search(q.fn.exists())
         elif items_to_retrieve == "sent_articles":
-            query_result = db.search(not q.sent)
+            query_result = db.search(q.sent == False)
         db.close()
     except Exception as ex:
         logging.error(ex)
