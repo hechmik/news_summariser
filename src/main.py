@@ -97,7 +97,7 @@ def load_model(settings):
                  "model_object": we,
                  "empty_strategy": empty_strategy}
     elif algorithm == "t5" or algorithm == "bart":
-        MODEL = transformers_summaries.load_transformer_model()
+        MODEL = transformers_summaries.load_transformer_model(algorithm)
     else:
         MODEL = None
 
