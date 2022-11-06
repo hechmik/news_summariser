@@ -26,8 +26,6 @@ def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
         "https://api.telegram.org/bot{token}/sendMessage".format(token=bot_token),
         data=payload).json()
     if not response['ok']:
-        logging.error(
-            "Unable to send the following message: {message}".format(message=bot_message))
         logging.error(response)
         raise Exception
     logging.info("telegram_bot_sendtext <<<")
@@ -83,6 +81,7 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
         title=title,
         url=url,
         summary=summary)
+    message.replace('\\.', ' \\. ')
     message_len = len(message)
     chat_max_len = 4096
     # Telegram limits messages to 4096 char: if its longer it is best to split it
