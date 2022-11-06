@@ -10,6 +10,7 @@ services:
       - ./db:/news_summariser/db
       - ./log:/news_summariser/log
       - ./transformers:/root/.cache/torch/transformers
+      - ./nltk_data:/root/nltk_data
     ports:
       - "5000:5000"
     restart: always
