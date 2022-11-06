@@ -81,7 +81,7 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
         title=title,
         url=url,
         summary=summary)
-    message.replace('\\.', ' \\. ')
+    message = message.replace('\\.', ' \\. ')
     message_len = len(message)
     chat_max_len = 4096
     # Telegram limits messages to 4096 char: if its longer it is best to split it
