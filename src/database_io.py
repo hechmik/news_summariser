@@ -3,7 +3,7 @@ from tinydb import TinyDB, Query
 import logging
 
 
-def retrieve_items_from_db(filename: str, items_to_retrieve: str):
+def retrieve_items_from_db(filename: str, items_to_retrieve: str) -> List:
     """
     Query the DB for obtaining the specified items
     :param filename: path where TinyDB is stored
@@ -19,7 +19,7 @@ def retrieve_items_from_db(filename: str, items_to_retrieve: str):
         elif items_to_retrieve == "messages":
             query_result = db.search(q.fn.exists())
         elif items_to_retrieve == "sent_articles":
-            query_result = db.search(q.sent == False)
+            query_result = db.search(not q.sent)
         db.close()
     except Exception as ex:
         logging.error(ex)

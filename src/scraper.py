@@ -1,14 +1,16 @@
+from typing import List
+
 import requests
 from bs4 import BeautifulSoup
 import logging
 import re
 
 
-def is_article_a_multimedia_page(link: str):
+def is_article_a_multimedia_page(link: str) -> bool:
     """
     Check if the given link is a multimedia one or not. This is done by simply looking at the final extension
     :param link: URL address
-    :return:
+    :return: Whether the input urls ends with a multimedia extension or not
     """
 
     if link.endswith(".html"):
@@ -19,27 +21,26 @@ def is_article_a_multimedia_page(link: str):
         return False
 
 
-def scrape_page(link: str, article_class: str, first_paragraph_index: int, last_paragraph_index: int):
+def scrape_page(link: str, article_class: str, first_paragraph_index: int, last_paragraph_index: int) -> List[str]:
     """
     Return the entire article in the given link
     :param link: Article URL
     :param article_class: CSS Class of the dive that contains all the article paragraphs
     :param first_paragraph_index: how many paragraphs should be skipped, starting from the beginning of the article
     :param last_paragraph_index: how many paragraphs should be skipped, starting from the end of the article
-    :return:
+    :return: List whose elements are articles' sentences/paragraphs.
     """
     logging.info("scrape_page >>>")
+    article = []
     try:
         logging.info(link)
         user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) ' \
                      'Chrome/35.0.1916.47 Safari/537.36 '
         headers = {'User-Agent': user_agent}
-        article = []
         if is_article_a_multimedia_page(link):
             return article
         page = requests.get(link, timeout=3, headers=headers)
         soup = BeautifulSoup(page.content, 'html.parser')
-        article = []
         all_divs = soup.find_all("div", class_=article_class)
         paragraphs = []
         try:

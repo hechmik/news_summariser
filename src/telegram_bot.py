@@ -14,7 +14,6 @@ def telegram_bot_sendtext(bot_chat_id: str, bot_token: str, bot_message: str):
     :param bot_chat_id: Telegram chat ID
     :param bot_token: Token of the given bot
     :param bot_message: Message that will be sent
-    :return:
     """
     logging.info("telegram_bot_sendtext >>>")
     payload = {
@@ -35,7 +34,6 @@ def send_summaries(settings: dict):
     """
     Retrieve summaries and send them to Telegram Bot if they weren't already sent
     :param settings: Dictionary where various configurations are stored
-    :return:
     """
     logging.info("send_summaries >>>")
     # Extract infos for sending messages to bot
@@ -71,7 +69,6 @@ def send_current_summary_as_message(article: dict, bot_chat_id: str, bot_token: 
     :param article: Summary to send via Telegram
     :param bot_chat_id: Target chat ID
     :param bot_token: Bot Token
-    :return:
     """
     # Build message
     title = helpers.escape_markdown(article['title'], 2)

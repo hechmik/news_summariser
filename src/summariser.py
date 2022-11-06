@@ -153,7 +153,7 @@ def preprocess_text(s: str, stopws, lemmatiser):
     return s
 
 
-def vectorize_sentence(sentence: List[str], model, empty_strategy, stretch_factor):
+def vectorize_sentence(sentence: List[str], model, empty_strategy):
     """
     Given a text transform it in a list of vectors using Word Embeddings techniques
     :param sentence: string containing a sentence
@@ -166,7 +166,7 @@ def vectorize_sentence(sentence: List[str], model, empty_strategy, stretch_facto
     vector_size = len(model['the'])
     for word in sentence:
         try:
-            sentence_embeddings.append(model[word] * stretch_factor)
+            sentence_embeddings.append(model[word])
         except KeyError:
             logging.debug("Word %s not found in WE model", word)
             if empty_strategy == "fill":
@@ -175,7 +175,6 @@ def vectorize_sentence(sentence: List[str], model, empty_strategy, stretch_facto
             logging.error("Error in vectorizing sentence")
             logging.error(ex)
     if sentence_embeddings:
-        print("In sentence embeddings!")
         sentence_vector = np.average(sentence_embeddings, axis=0)
     else:
         # Return default value if no word is in the embedding
@@ -184,7 +183,7 @@ def vectorize_sentence(sentence: List[str], model, empty_strategy, stretch_facto
     return sentence_vector
 
 
-def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict):
+def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict) -> float:
     """
     Return the similarity of two sentences
     :param s1: first sentence
@@ -200,7 +199,6 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
         vector_1 = vectorize_sentence(s1, model_obj.model, empty_strategy)
         vector_2 = vectorize_sentence(s2, model_obj.model, empty_strategy)
         score = cosine(vector_1, vector_2)
-        print(vector_1[0:2], vector_2[0:2], score)
     elif distance_metric == "wmd":
         score = model_obj.wmdistance(s1, s2)
     else:
@@ -209,12 +207,13 @@ def compute_sentence_similarity(s1: List[str], s2: List[str], model_infos: dict)
     return score
 
 
-def build_similarity_matrix(sentences: List[str], model, nan_mode=True):
+def build_similarity_matrix(sentences: List[List[str]], model, nan_mode=True) -> np.ndarray:
     """
     Compute the similarity matrix related to all input sentences
+    :param nan_mode: Whether to use np.NaN or 0 for representing "holes" in matrix
     :param sentences: list of sentences to compare
     :param model: word embedding model
-    :return:
+    :return: Similarity matrix
     """
     logging.info("build_similarity_matrix >>>")
     n_sent = len(sentences)
@@ -224,7 +223,7 @@ def build_similarity_matrix(sentences: List[str], model, nan_mode=True):
         matrix = np.zeros((n_sent, n_sent))
     for i in range(0, n_sent):
         for j in range(0, n_sent):
-            if i != j and (not matrix[i,j] or matrix[i, j] == 0 or np.isnan(matrix[i,j])):
+            if i != j and (not matrix[i, j] or matrix[i, j] == 0 or np.isnan(matrix[i,j])):
                 matrix[i, j] = matrix[j, i] = compute_sentence_similarity(sentences[i],
                                                                           sentences[j],
                                                                           model)
@@ -305,7 +304,6 @@ def get_sentences_by_scores(scores, sentences: List[str], maximise_score: bool, 
         # Sort indexes in ascending order: in this way we will maintain article coherence
         summary_sentences_index.sort()
     summary = [sentences[i] for i in summary_sentences_index]
-    print(len(sentences), len(summary))
     logging.info("get_sentences_by_scores <<<")
     return summary
 
@@ -361,7 +359,6 @@ def create_summary(text: List[str],
         preprocessed_sentences = [" ".join(s) for s in preprocessed_sentences]
     algorithm = settings['algorithm']
     if algorithm in ["pagerank", "auto_summarisation"]:
-        #matrix = build_similarity_matrix(preprocessed_sentences, model)
         if algorithm == "pagerank":
             matrix = build_similarity_matrix(preprocessed_sentences, model, nan_mode=False)
             summary = pagerank_summarisation(matrix, sentences, settings)
@@ -376,5 +373,4 @@ def create_summary(text: List[str],
         logging.error(f"Invalid algorithm. Expected pagerank, tf_idf, bart, t5, got {algorithm}")
         summary = ""
     logging.info("create_summary <<<")
-    print(summary)
     return summary
